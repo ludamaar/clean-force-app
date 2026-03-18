@@ -57,7 +57,7 @@ const G = {
 };
 
 export default function App() {
-  const [vista, setVista] = useState("inicio"); // inicio | directorio | registrar | perfil
+  const [vista, setVista] = useState("inicio"); // inicio | directorio | registrar | perfil | aviso
   const [trabajadores, setTrabajadores] = useState([]);
   const [seleccionado, setSeleccionado] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -123,7 +123,8 @@ export default function App() {
           onContratar={() => setModalSolicitud(true)}
         />
       )}
-      {vista === "registrar" && <Registrar onSuccess={(n) => { setVista("directorio"); showToast(`¡Bienvenido ${n}! Tu perfil está en revisión 🎉`); cargar(); }} />}
+      {vista === "registrar" && <Registrar onSuccess={(n) => { setVista("directorio"); showToast(`¡Bienvenido ${n}! Tu perfil está en revisión 🎉`); cargar(); }} setVista={setVista} />}
+      {vista === "aviso" && <AvisoPrivacidad onBack={() => setVista("inicio")} />}
 
       {modalSolicitud && seleccionado && (
         <ModalSolicitud trabajador={seleccionado} onClose={() => setModalSolicitud(false)}
@@ -152,6 +153,7 @@ function Nav({ vista, setVista }) {
       </div>
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <button onClick={() => setVista("directorio")} style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: vista === "directorio" ? G.greenLight : "transparent", color: vista === "directorio" ? G.green : G.muted, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Directorio</button>
+        <button onClick={() => setVista("aviso")} style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "transparent", color: G.muted, fontWeight: 500, fontSize: 13, cursor: "pointer" }}>Privacidad</button>
         <button onClick={() => setVista("registrar")} style={{ padding: "9px 18px", borderRadius: 10, border: "none", background: G.green, color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Publicar perfil gratis</button>
       </div>
     </nav>
@@ -751,9 +753,9 @@ function Registrar({ onSuccess }) {
                 />
                 <span style={{ fontSize: 13, color: G.text, lineHeight: 1.6 }}>
                   He leído y acepto el{" "}
-                  <a href="/aviso-privacidad" target="_blank" rel="noopener noreferrer" style={{ color: G.green, fontWeight: 700, textDecoration: "underline" }}>
+<span style={{ color: G.green, fontWeight: 700, textDecoration: "underline", cursor: "pointer" }} onClick={() => window.open("#aviso", "_blank")}>
                     Aviso de Privacidad
-                  </a>{" "}
+                  </span>{" "}
                   de CleanForce. Entiendo que mis datos personales, incluyendo fotografía e identificación oficial, serán tratados conforme a dicho aviso y la{" "}
                   <strong>Ley Federal de Protección de Datos Personales en Posesión de Particulares (LFPDPPP)</strong>.
                 </span>
@@ -773,6 +775,99 @@ function Registrar({ onSuccess }) {
             </p>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ── Aviso de Privacidad ───────────────────────────────────────────────────────
+function AvisoPrivacidad({ onBack }) {
+  const wrap = { maxWidth: 800, margin: "0 auto", padding: "32px 24px 64px" };
+  const card = { background: "#fff", border: "1px solid #E5E7EB", borderRadius: 20, padding: "40px 48px" };
+  const sh2 = { fontSize: 16, fontWeight: 700, color: "#111827", margin: "28px 0 8px", paddingBottom: 6, borderBottom: "2px solid #DCFCE7" };
+  const sp = { fontSize: 14, color: "#374151", lineHeight: 1.8, marginBottom: 10 };
+  const sli = { fontSize: 14, color: "#374151", lineHeight: 2, marginLeft: 20 };
+
+  return (
+    <div style={wrap}>
+      <button onClick={onBack} style={{ display:"flex", alignItems:"center", gap:6, background:"none", border:"none", color:"#6B7280", cursor:"pointer", fontSize:14, fontWeight:600, marginBottom:24 }}>
+        ← Volver al inicio
+      </button>
+      <div style={card}>
+        <div style={{ display:"inline-block", background:"#DCFCE7", color:"#15803D", fontSize:11, fontWeight:700, padding:"3px 12px", borderRadius:20, marginBottom:20 }}>
+          Documento legal vigente
+        </div>
+        <h1 style={{ fontSize:28, fontWeight:800, color:"#16A34A", marginBottom:4 }}>Aviso de Privacidad</h1>
+        <p style={{ ...sp, color:"#6B7280", marginBottom:28 }}>
+          Última actualización: {new Date().toLocaleDateString("es-MX", { day:"numeric", month:"long", year:"numeric" })}
+        </p>
+
+        <h2 style={sh2}>I. Identidad del Responsable</h2>
+        <p style={sp}>
+          <strong>CleanForce Marketplace</strong> es responsable del tratamiento de tus datos personales.
+          Domicilio: Monterrey, Nuevo León, México.
+          Contacto: <a href="mailto:privacidad@cleanforce.com.mx" style={{ color:"#16A34A" }}>privacidad@cleanforce.com.mx</a>
+        </p>
+
+        <h2 style={sh2}>II. Datos personales que recabamos</h2>
+        <p style={sp}><strong>Trabajadores:</strong></p>
+        <ul>
+          <li style={sli}>Nombre completo, correo electrónico y teléfono</li>
+          <li style={sli}>Especialidad, zona, turno, tarifa y experiencia</li>
+          <li style={sli}>Fotografía de perfil</li>
+          <li style={sli}>Selfie con identificación oficial (INE/IFE) — dato sensible</li>
+          <li style={sli}>Referencias laborales: nombre, teléfono y relación</li>
+        </ul>
+        <p style={{ ...sp, marginTop:10 }}><strong>Empleadores:</strong> nombre o empresa, correo electrónico y teléfono al enviar una solicitud.</p>
+
+        <h2 style={sh2}>III. Finalidades del tratamiento</h2>
+        <p style={sp}><strong>Primarias:</strong> crear y gestionar tu perfil público, verificar tu identidad, facilitar el contacto entre trabajadores y empleadores, gestionar solicitudes y mostrar calificaciones.</p>
+        <p style={sp}><strong>Secundarias (puedes oponerte):</strong> notificaciones de nuevas solicitudes, comunicaciones de mejoras y análisis estadísticos anónimos. Para oponerte escríbenos a privacidad@cleanforce.com.mx</p>
+
+        <h2 style={sh2}>IV. Transferencias de datos</h2>
+        <p style={sp}>Compartimos tus datos únicamente con proveedores tecnológicos necesarios para operar la plataforma:</p>
+        <div style={{ background:"#F0FDF4", border:"1px solid #DCFCE7", borderRadius:10, padding:"14px 18px", marginBottom:12 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom:"1px solid #DCFCE7", fontSize:13 }}>
+            <strong>Supabase Inc. (EE.UU.)</strong><span style={{ color:"#6B7280" }}>Base de datos cifrada AES-256</span>
+          </div>
+          <div style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom:"1px solid #DCFCE7", fontSize:13 }}>
+            <strong>Vercel Inc. (EE.UU.)</strong><span style={{ color:"#6B7280" }}>Hospedaje web</span>
+          </div>
+          <div style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", fontSize:13 }}>
+            <strong>Cloudinary Inc. (EE.UU.)</strong><span style={{ color:"#6B7280" }}>Almacenamiento de imágenes</span>
+          </div>
+        </div>
+        <p style={sp}>No vendemos tus datos a terceros bajo ninguna circunstancia.</p>
+
+        <h2 style={sh2}>V. Datos sensibles</h2>
+        <p style={sp}>La fotografía con INE es un dato sensible utilizado exclusivamente para verificar tu identidad. Se almacena en buckets privados cifrados con acceso restringido. Al proporcionarla otorgas consentimiento expreso.</p>
+
+        <h2 style={sh2}>VI. Derechos ARCO</h2>
+        <p style={sp}>Tienes derecho a <strong>Acceder, Rectificar, Cancelar u Oponerte</strong> al tratamiento de tus datos:</p>
+        <ul>
+          <li style={sli}>Envía un correo a privacidad@cleanforce.com.mx con asunto "Solicitud ARCO"</li>
+          <li style={sli}>Incluye tu nombre completo, correo registrado y descripción de tu solicitud</li>
+          <li style={sli}>Respondemos en máximo 20 días hábiles</li>
+        </ul>
+
+        <h2 style={sh2}>VII. Medidas de seguridad</h2>
+        <p style={sp}>Cifrado HTTPS/TLS 1.3 en todas las comunicaciones, cifrado AES-256 en reposo, Row Level Security en la base de datos y acceso restringido por roles al panel de administración.</p>
+
+        <h2 style={sh2}>VIII. Menores de edad</h2>
+        <p style={sp}>CleanForce no recopila datos de menores de 18 años. Al registrarte declaras ser mayor de edad.</p>
+
+        <h2 style={sh2}>IX. Cambios al aviso</h2>
+        <p style={sp}>Cualquier modificación será notificada en esta página con al menos 10 días de anticipación a su entrada en vigor.</p>
+
+        <h2 style={sh2}>X. Contacto y autoridad competente</h2>
+        <p style={sp}>Para dudas: <a href="mailto:privacidad@cleanforce.com.mx" style={{ color:"#16A34A", fontWeight:600 }}>privacidad@cleanforce.com.mx</a></p>
+        <p style={sp}>Si consideras que tus derechos han sido vulnerados puedes acudir al <strong>INAI</strong>: <a href="https://www.inai.org.mx" target="_blank" rel="noopener noreferrer" style={{ color:"#16A34A" }}>www.inai.org.mx</a></p>
+
+        <div style={{ marginTop:32, padding:"16px 20px", background:"#F9FAFB", borderRadius:10, textAlign:"center" }}>
+          <p style={{ fontSize:12, color:"#6B7280" }}>
+            CleanForce Marketplace · Monterrey, Nuevo León, México
+          </p>
+        </div>
       </div>
     </div>
   );
