@@ -127,9 +127,9 @@ function Inicio({setVista,trabajadores}) {
       <div style={{background:"linear-gradient(135deg,#F0FDF4,#DCFCE7,#BBF7D0)",padding:"72px 24px 56px",textAlign:"center",position:"relative",overflow:"hidden"}}>
         <div style={{position:"absolute",top:-60,right:-60,width:280,height:280,background:"rgba(22,163,74,.06)",borderRadius:"50%"}}/>
         <div style={{position:"relative",maxWidth:640,margin:"0 auto"}} className="fu">
-          <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"#fff",border:`1px solid ${G.border}`,borderRadius:20,padding:"5px 14px",fontSize:12,fontWeight:600,color:G.green,marginBottom:20,boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>📍 📍 Para todo Nuevo León · ZMM y municipios</div>
-          <h1 style={{fontSize:"clamp(28px,5vw,50px)",fontWeight:800,lineHeight:1.1,color:G.text,marginBottom:16}}>Encuentra personal de limpieza<br/><span style={{color:G.green}}>de confianza en NL</span></h1>
-          <p style={{fontSize:17,color:G.muted,lineHeight:1.7,marginBottom:32,maxWidth:500,margin:"0 auto 32px"}}>Perfiles verificados con INE y referencias. Domésticas, cuidadoras, limpieza — en toda la ZMM y municipios de Nuevo León.</p>
+          <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"#fff",border:`1px solid ${G.border}`,borderRadius:20,padding:"5px 14px",fontSize:12,fontWeight:600,color:G.green,marginBottom:20,boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>📍 Para todo Nuevo León · Zona Metropolitana de Monterrey y municipios</div>
+          <h1 style={{fontSize:"clamp(28px,5vw,50px)",fontWeight:800,lineHeight:1.1,color:G.text,marginBottom:16}}>Encuentra personal de limpieza<br/><span style={{color:G.green}}>de confianza en Nuevo León</span></h1>
+          <p style={{fontSize:17,color:G.muted,lineHeight:1.7,marginBottom:32,maxWidth:500,margin:"0 auto 32px"}}>Perfiles verificados con INE y referencias. Domésticas, cuidadoras, limpieza — en toda la Zona Metropolitana de Monterrey y municipios de Nuevo León.</p>
           <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
             <button onClick={()=>setVista("directorio")} style={{padding:"14px 28px",background:G.green,color:"#fff",border:"none",borderRadius:12,fontWeight:700,fontSize:15,cursor:"pointer",boxShadow:"0 4px 20px rgba(22,163,74,.4)"}}>Ver profesionales →</button>
             <button onClick={()=>setVista("registrar")} style={{padding:"14px 28px",background:"#fff",color:G.green,border:`2px solid ${G.green}`,borderRadius:12,fontWeight:700,fontSize:15,cursor:"pointer"}}>Publicar mi perfil</button>
@@ -139,7 +139,7 @@ function Inicio({setVista,trabajadores}) {
 
       <div style={{background:G.white,borderBottom:`1px solid ${G.border}`}}>
         <div style={{maxWidth:900,margin:"0 auto",padding:"24px",display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:0}}>
-          {[{n:`${trabajadores.length}+`,l:"Profesionales activas",icon:"🧼"},{n:"51 mun.",l:"Todo Nuevo León",icon:"🗺️"},{n:"100%",l:"Perfiles verificados",icon:"✅"},{n:"4.8★",l:"Calificación promedio",icon:"⭐"}].map(({n,l,icon},i)=>(
+          {[{n:`${trabajadores.length}+`,l:"Profesionales activas",icon:"🧼"},{n:"51 Municipios",l:"Todo Nuevo León",icon:"🗺️"},{n:"100%",l:"Perfiles verificados",icon:"✅"},{n:"4.8★",l:"Calificación promedio",icon:"⭐"}].map(({n,l,icon},i)=>(
             <div key={i} style={{textAlign:"center",padding:"0 16px",borderRight:i<3?`1px solid ${G.border}`:"none"}}>
               <div style={{fontSize:24}}>{icon}</div>
               <div style={{fontSize:24,fontWeight:800,color:G.green,lineHeight:1.2}}>{n}</div>
@@ -151,7 +151,7 @@ function Inicio({setVista,trabajadores}) {
 
       <div style={{maxWidth:1000,margin:"0 auto",padding:"48px 24px 32px"}}>
         <h2 style={{textAlign:"center",fontSize:22,fontWeight:800,marginBottom:6}}>Cobertura en todo Nuevo León</h2>
-        <p style={{textAlign:"center",color:G.muted,fontSize:14,marginBottom:28}}>ZMM y municipios del interior del estado</p>
+        <p style={{textAlign:"center",color:G.muted,fontSize:14,marginBottom:28}}>Zona Metropolitana de Monterrey y municipios del interior del estado</p>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
           {Object.entries(ZONAS_NL).map(([zona,municipios])=>(
             <div key={zona} className="ch" onClick={()=>setVista("directorio")} style={{background:G.white,border:`1.5px solid ${G.border}`,borderRadius:14,padding:"18px 20px",cursor:"pointer"}}>
@@ -368,7 +368,7 @@ function Perfil({w,onBack,onContratar}) {
               </div>
               <div style={{color:G.green,fontWeight:600,fontSize:13,marginBottom:6}}>{w.especialidad}</div>
               <div style={{display:"flex",gap:12,flexWrap:"wrap",fontSize:11,color:G.muted}}>
-                <span>📍 {w.municipio}, NL</span><span>🗺️ Zona {w.zona_metro}</span><span>💼 {w.experiencia}</span>{w.jornada && <span>🕐 {w.jornada}</span>}
+                <span>📍 {w.municipio}, Nuevo León</span><span>🗺️ Zona {w.zona_metro}</span><span>💼 {w.experiencia}</span>{w.jornada && <span>🕐 {w.jornada}</span>}
               </div>
             </div>
             <div style={{textAlign:"right"}}><div style={{fontSize:28,fontWeight:800}}>${w.tarifa}</div><div style={{fontSize:11,color:G.muted}}>MXN / {w.tipo_tarifa||"hora"}</div></div>
@@ -647,7 +647,7 @@ function AvisoPrivacidad({onBack}) {
         <h1 style={{fontSize:26,fontWeight:800,color:"#16A34A",marginBottom:4}}>Aviso de Privacidad</h1>
         <p style={{...sp,color:"#6B7280",marginBottom:24}}>Última actualización: {new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"})}</p>
         <h2 style={sh2}>I. Identidad del Responsable</h2>
-        <p style={sp}><strong>CleanForce Marketplace</strong> · Monterrey, NL, México · <a href="mailto:privacidad@cleanforce.com.mx" style={{color:"#16A34A"}}>privacidad@cleanforce.com.mx</a></p>
+        <p style={sp}><strong>CleanForce Marketplace</strong> · Monterrey, Nuevo León, México · <a href="mailto:privacidad@cleanforce.com.mx" style={{color:"#16A34A"}}>privacidad@cleanforce.com.mx</a></p>
         <h2 style={sh2}>II. Datos que recabamos</h2>
         <ul><li style={sli}>Nombre, email, teléfono</li><li style={sli}>Municipio, zona, jornada y tarifa</li><li style={sli}>Fotografía de perfil</li><li style={sli}>Selfie con INE (dato sensible)</li><li style={sli}>Referencias laborales: nombre, teléfono y relación</li></ul>
         <h2 style={sh2}>III. Finalidades</h2>
