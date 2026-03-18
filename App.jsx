@@ -500,6 +500,7 @@ function Registrar({ onSuccess }) {
   const [referencias, setReferencias] = useState([{ nombre: "", telefono: "", relacion: "" }]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [aceptaAviso, setAceptaAviso] = useState(false);
   const fotoRef = useRef(); const selfieRef = useRef();
 
   const handleFoto = (key, file) => {
@@ -516,6 +517,7 @@ function Registrar({ onSuccess }) {
 
   const registrar = async () => {
     if (!form.nombre || !form.email) { setError("Nombre y email son requeridos."); return; }
+    if (!aceptaAviso) { setError("Debes aceptar el Aviso de Privacidad para continuar."); return; }
     setLoading(true); setError(null);
     try {
       const refsValidas = referencias.filter(r => r.nombre && r.telefono);
@@ -738,16 +740,36 @@ function Registrar({ onSuccess }) {
 
             {error && <div style={{ color: G.red, fontSize: 13, marginBottom: 12, textAlign: "center" }}>{error}</div>}
 
+            {/* Casilla de aceptación del Aviso de Privacidad */}
+            <div style={{ background: aceptaAviso ? G.greenPale : "#FFFBEB", border: `1.5px solid ${aceptaAviso ? G.green : "#FCD34D"}`, borderRadius: 12, padding: 16, marginBottom: 16 }}>
+              <label style={{ display: "flex", alignItems: "flex-start", gap: 12, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={aceptaAviso}
+                  onChange={e => setAceptaAviso(e.target.checked)}
+                  style={{ width: 20, height: 20, marginTop: 1, accentColor: G.green, flexShrink: 0, cursor: "pointer" }}
+                />
+                <span style={{ fontSize: 13, color: G.text, lineHeight: 1.6 }}>
+                  He leído y acepto el{" "}
+                  <a href="/aviso-privacidad" target="_blank" rel="noopener noreferrer" style={{ color: G.green, fontWeight: 700, textDecoration: "underline" }}>
+                    Aviso de Privacidad
+                  </a>{" "}
+                  de CleanForce. Entiendo que mis datos personales, incluyendo fotografía e identificación oficial, serán tratados conforme a dicho aviso y la{" "}
+                  <strong>Ley Federal de Protección de Datos Personales en Posesión de Particulares (LFPDPPP)</strong>.
+                </span>
+              </label>
+            </div>
+
             <div style={{ display: "flex", gap: 10 }}>
               <button style={{ flex: 1, padding: 14, background: G.bg, color: G.text, border: `1.5px solid ${G.border}`, borderRadius: 12, fontWeight: 700, fontSize: 15, cursor: "pointer" }} onClick={() => setPaso(2)}>
                 ← Atrás
               </button>
-              <button style={{ flex: 2, padding: 14, background: G.green, color: "#fff", border: "none", borderRadius: 12, fontWeight: 700, fontSize: 15, cursor: "pointer", opacity: loading ? .7 : 1 }} onClick={registrar} disabled={loading}>
+              <button style={{ flex: 2, padding: 14, background: aceptaAviso ? G.green : "#9CA3AF", color: "#fff", border: "none", borderRadius: 12, fontWeight: 700, fontSize: 15, cursor: aceptaAviso ? "pointer" : "not-allowed", opacity: loading ? .7 : 1, transition: "background .2s" }} onClick={registrar} disabled={loading || !aceptaAviso}>
                 {loading ? "Creando perfil..." : "🎉 Crear mi perfil gratis"}
               </button>
             </div>
             <p style={{ fontSize: 11, color: G.muted, textAlign: "center", marginTop: 12 }}>
-              Al crear tu perfil aceptas nuestros términos de uso y política de privacidad
+              Tus datos están protegidos · privacidad@cleanforce.com.mx
             </p>
           </div>
         )}
