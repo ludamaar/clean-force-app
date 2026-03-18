@@ -5,774 +5,629 @@ const SUPABASE_KEY = "sb_publishable_XA81q-zuUI1rDn-wef7DPg_2ASr_rD5";
 
 async function sbFetch(path, options = {}) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    headers: {
-      apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
-      "Content-Type": "application/json",
-      Prefer: options.prefer || "return=representation",
-      ...options.headers,
-    },
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json", Prefer: options.prefer || "return=representation", ...options.headers },
     ...options,
   });
   if (!res.ok) throw new Error(await res.text());
-  const t = await res.text();
-  return t ? JSON.parse(t) : null;
+  const t = await res.text(); return t ? JSON.parse(t) : null;
 }
+const db = { get: (t, q = "") => sbFetch(`${t}?${q}`), post: (t, b) => sbFetch(t, { method: "POST", body: JSON.stringify(b) }) };
 
-const db = {
-  get: (t, q = "") => sbFetch(`${t}?${q}`),
-  post: (t, b) => sbFetch(t, { method: "POST", body: JSON.stringify(b) }),
+const ZONAS_NL = {
+  "ZMM Norte": ["General Escobedo", "García", "Apodaca", "San Nicolás de los Garza", "Salinas Victoria", "Ciénega de Flores", "General Zuazua", "El Carmen", "Abasolo", "Hidalgo"],
+  "ZMM Sur": ["San Pedro Garza García", "Santa Catarina", "Santiago", "San Jerónimo", "Carretera Nacional", "Allende", "Rayones"],
+  "ZMM Oriente": ["Guadalupe", "Juárez", "Cadereyta Jiménez", "Pesquería", "Doctor González", "Marín"],
+  "Monterrey Centro": ["Monterrey Centro", "Obispado", "Mitras", "Contry", "Del Valle", "Chepevera", "Roma", "San Bernabé", "Cumbres"],
+  "ZMM Valle": ["Valle Oriente", "Del Valle", "San Pedro Centro", "Fuentes del Valle", "Cumbres Platino", "Linda Vista"],
+  "Norte NL": ["Sabinas Hidalgo", "Villaldama", "Lampazos de Naranjo", "Anáhuac", "Bustamante", "Mina", "Vallecillo", "Parás", "Agualeguas"],
+  "Noreste NL": ["Cerralvo", "General Treviño", "Los Herreras", "Los Aldamas", "Doctor Coss", "Melchor Ocampo", "Higueras", "General Bravo", "China"],
+  "Sur NL": ["Linares", "Montemorelos", "Hualahuises", "General Terán", "Los Ramones", "Iturbide", "Galeana", "Aramberri", "Doctor Arroyo", "Mier y Noriega", "General Zaragoza"],
 };
-
-const ESPECIALIDADES = ["Doméstica", "Industrial", "Oficinas", "Hospitales", "Hotelera"];
-const ZONAS = ["Norte", "Sur", "Centro", "Oriente", "Poniente"];
-const TURNOS = ["Matutino 6am–2pm", "Vespertino 2pm–10pm", "Nocturno 10pm–6am"];
-
-const COLORES_AVATAR = [
-  { bg: "#FFF0E6", text: "#C4500A" }, { bg: "#E6F7FF", text: "#0A6BC4" },
-  { bg: "#E6FFF0", text: "#0A7A3C" }, { bg: "#F5E6FF", text: "#7A0AC4" },
-  { bg: "#FFEBE6", text: "#C41A0A" }, { bg: "#E6EEFF", text: "#0A29C4" },
-  { bg: "#FFF9E6", text: "#C49A0A" }, { bg: "#FFE6F5", text: "#C40A7A" },
+const TODOS_MUNICIPIOS = [...new Set(Object.values(ZONAS_NL).flat())].sort();
+const TIPOS_TRABAJO = [
+  "Empleada doméstica general",
+  "Limpieza del hogar",
+  "Planchado y lavandería",
+  "Elaboración de comidas (desayuno/comida/cena)",
+  "Cuidadora de niños",
+  "Cuidadora de adulto mayor",
+  "Limpieza de zonas de mascotas",
+  "Limpieza de oficinas/comercios",
+  "Limpieza industrial",
+  "Limpieza post-construcción",
+  "Limpieza post-remodelación",
+  "Limpieza de mudanza",
+  "Limpieza profunda",
+  "Desinfección y sanitización",
 ];
-
-const colorPara = (n = "") => COLORES_AVATAR[n.charCodeAt(0) % COLORES_AVATAR.length];
-const iniciales = (n = "") => n.split(" ").slice(0, 2).map(x => x[0]?.toUpperCase()).join("");
-const estrellas = (n) => "★".repeat(Math.round(n || 0)) + "☆".repeat(5 - Math.round(n || 0));
-
-// ── Estilos globales ──────────────────────────────────────────────────────────
-const G = {
-  font: "'Plus Jakarta Sans', 'Nunito', sans-serif",
-  green: "#16A34A",
-  greenDark: "#15803D",
-  greenLight: "#DCFCE7",
-  greenPale: "#F0FDF4",
-  text: "#111827",
-  muted: "#6B7280",
-  border: "#E5E7EB",
-  bg: "#F9FAFB",
-  white: "#FFFFFF",
-  orange: "#F97316",
-  blue: "#3B82F6",
-  red: "#EF4444",
-};
+const JORNADAS = ["De planta (quedada)","Entrada por salida (lunes a viernes)","Entrada por salida (fines de semana)","Por horas / días específicos","Medio tiempo"];
+const TIPOS_INMUEBLE = ["Departamento","Casa 1 nivel","Casa 2 niveles","Casa 3+ niveles","Casa con sótano","Oficina/local comercial","Nave industrial"];
+const TURNOS = ["Matutino 6am–2pm","Vespertino 2pm–10pm","Nocturno 10pm–6am"];
+const TIPO_TARIFA = ["Por hora","Por día","Por semana","Por quincena"];
+const EDADES_NINOS = ["Recién nacido (0–1 año)","1 a 3 años","3 a 5 años","5 a 7 años","7 a 12 años","12 años en adelante"];
+const SERVICIOS_ESPECIALES = [
+  "Limpieza profunda",
+  "Limpieza post-construcción",
+  "Limpieza post-remodelación",
+  "Limpieza de mudanza (entrada o salida)",
+  "Desinfección y sanitización",
+  "Mascotas en casa OK",
+  "Jardín y áreas verdes",
+  "Ventanas y vidrios",
+  "Tapicería y alfombras",
+  "Cocina industrial",
+  "Fumigación básica",
+];
+const COLORES_AV = [{bg:"#FFF0E6",text:"#C4500A"},{bg:"#E6F7FF",text:"#0A6BC4"},{bg:"#E6FFF0",text:"#0A7A3C"},{bg:"#F5E6FF",text:"#7A0AC4"},{bg:"#FFEBE6",text:"#C41A0A"},{bg:"#E6EEFF",text:"#0A29C4"},{bg:"#FFF9E6",text:"#C49A0A"},{bg:"#FFE6F5",text:"#C40A7A"}];
+const G = {green:"#16A34A",greenDark:"#15803D",greenLight:"#DCFCE7",greenPale:"#F0FDF4",text:"#111827",muted:"#6B7280",border:"#E5E7EB",bg:"#F9FAFB",white:"#FFFFFF",red:"#EF4444"};
+const colorPara = (n="") => COLORES_AV[n.charCodeAt(0)%COLORES_AV.length];
+const iniciales = (n="") => n.split(" ").slice(0,2).map(x=>x[0]?.toUpperCase()).join("");
+const estrellas = (n) => "★".repeat(Math.round(n||0))+"☆".repeat(5-Math.round(n||0));
 
 export default function App() {
-  const [vista, setVista] = useState("inicio"); // inicio | directorio | registrar | perfil | aviso
+  const [vista, setVista] = useState("inicio");
   const [trabajadores, setTrabajadores] = useState([]);
   const [seleccionado, setSeleccionado] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [filtros, setFiltros] = useState({ q: "", zona: "", especialidad: "", turno: "" });
+  const [filtros, setFiltros] = useState({q:"",zona:"",municipio:"",tiposTrabajo:[],jornada:"",tipoInmueble:"",tarifa:500});
   const [modalSolicitud, setModalSolicitud] = useState(false);
   const [toast, setToast] = useState(null);
 
-  const showToast = (msg, tipo = "ok") => {
-    setToast({ msg, tipo });
-    setTimeout(() => setToast(null), 3500);
-  };
-
+  const showToast = (msg,tipo="ok") => { setToast({msg,tipo}); setTimeout(()=>setToast(null),3500); };
   const cargar = useCallback(async () => {
     setLoading(true);
-    try {
-      const data = await db.get("trabajadores", "activo=eq.true&order=premium.desc,rating.desc");
-      setTrabajadores(data || []);
-    } catch { showToast("Error cargando trabajadores", "err"); }
+    try { const d = await db.get("trabajadores","activo=eq.true&order=premium.desc,rating.desc"); setTrabajadores(d||[]); }
+    catch { showToast("Error cargando","err"); }
     finally { setLoading(false); }
-  }, []);
+  },[]);
 
-  useEffect(() => { if (vista === "directorio") cargar(); }, [vista, cargar]);
+  useEffect(()=>{ if(vista==="directorio"||vista==="inicio") cargar(); },[vista]);
 
+  const municipiosFiltrados = filtros.zona ? ZONAS_NL[filtros.zona]||[] : TODOS_MUNICIPIOS;
   const filtrados = trabajadores.filter(w => {
-    if (filtros.q && !w.nombre?.toLowerCase().includes(filtros.q.toLowerCase()) && !w.especialidad?.toLowerCase().includes(filtros.q.toLowerCase())) return false;
-    if (filtros.zona && w.zona !== filtros.zona) return false;
-    if (filtros.especialidad && w.especialidad !== filtros.especialidad) return false;
-    if (filtros.turno && !w.turno?.includes(filtros.turno.split(" ")[0])) return false;
+    if(filtros.q && !w.nombre?.toLowerCase().includes(filtros.q.toLowerCase()) && !w.municipio?.toLowerCase().includes(filtros.q.toLowerCase()) && !(w.tipo_trabajo||[]).some(t=>t.toLowerCase().includes(filtros.q.toLowerCase()))) return false;
+    if(filtros.zona && w.zona_metro!==filtros.zona) return false;
+    if(filtros.municipio && w.municipio!==filtros.municipio) return false;
+    if((filtros.tiposTrabajo||[]).length>0 && !(filtros.tiposTrabajo||[]).some(t=>(w.tipo_trabajo||[]).includes(t))) return false;
+    if(filtros.jornada && w.jornada!==filtros.jornada) return false;
+    if(filtros.tipoInmueble && !(w.tipo_inmueble||[]).includes(filtros.tipoInmueble)) return false;
+    if(w.tarifa>filtros.tarifa) return false;
     return true;
   });
 
   return (
-    <div style={{ fontFamily: G.font, background: G.bg, minHeight: "100vh", color: G.text }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        input, select, textarea, button { font-family: inherit; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
-        @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.05); } }
-        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,.1) !important; border-color: #16A34A !important; }
-        .card-hover { transition: all .25s cubic-bezier(.4,0,.2,1); }
-        .btn-pulse:hover { animation: pulse .4s ease; }
-        .fade-up { animation: fadeUp .5s ease forwards; }
-      `}</style>
-
-      <Nav vista={vista} setVista={setVista} />
-
-      {vista === "inicio" && <Inicio setVista={setVista} trabajadores={trabajadores} cargar={cargar} />}
-      {vista === "directorio" && (
-        <Directorio
-          filtrados={filtrados} filtros={filtros} setFiltros={setFiltros}
-          loading={loading} onSelect={w => { setSeleccionado(w); setVista("perfil"); }}
-          total={trabajadores.length}
-        />
-      )}
-      {vista === "perfil" && seleccionado && (
-        <Perfil
-          w={seleccionado} onBack={() => setVista("directorio")}
-          onContratar={() => setModalSolicitud(true)}
-        />
-      )}
-      {vista === "registrar" && <Registrar onSuccess={(n) => { setVista("directorio"); showToast(`¡Bienvenido ${n}! Tu perfil está en revisión 🎉`); cargar(); }} setVista={setVista} />}
-      {vista === "aviso" && <AvisoPrivacidad onBack={() => setVista("inicio")} />}
-
-      {modalSolicitud && seleccionado && (
-        <ModalSolicitud trabajador={seleccionado} onClose={() => setModalSolicitud(false)}
-          onSuccess={() => { setModalSolicitud(false); showToast(`Solicitud enviada a ${seleccionado.nombre?.split(" ")[0]} ✓`); }} />
-      )}
-
-      {toast && (
-        <div style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", background: toast.tipo === "err" ? G.red : "#111827", color: "#fff", padding: "14px 28px", borderRadius: 40, fontSize: 14, fontWeight: 600, zIndex: 999, whiteSpace: "nowrap", boxShadow: "0 8px 32px rgba(0,0,0,.2)" }}>
-          {toast.msg}
+    <div style={{fontFamily:"'Plus Jakarta Sans','Nunito',sans-serif",background:G.bg,minHeight:"100vh",color:G.text}}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');*{box-sizing:border-box;margin:0;padding:0}input,select,textarea,button{font-family:inherit}.ch:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(0,0,0,.1)!important;border-color:#16A34A!important}.ch{transition:all .2s}@keyframes fu{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}.fu{animation:fu .4s ease forwards}@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}`}</style>
+      <nav style={{background:G.white,borderBottom:`1px solid ${G.border}`,padding:"0 24px",display:"flex",alignItems:"center",justifyContent:"space-between",height:64,position:"sticky",top:0,zIndex:100,boxShadow:"0 1px 8px rgba(0,0,0,.06)"}}>
+        <div onClick={()=>setVista("inicio")} style={{cursor:"pointer",display:"flex",alignItems:"center",gap:10}}>
+          <div style={{width:38,height:38,background:G.green,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>🧹</div>
+          <div><div style={{fontWeight:800,fontSize:17,color:G.text,lineHeight:1}}>CleanForce</div><div style={{fontSize:9,color:G.muted,letterSpacing:1.5}}>NUEVO LEÓN</div></div>
         </div>
-      )}
+        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+          <button onClick={()=>setVista("directorio")} style={{padding:"8px 14px",borderRadius:8,border:"none",background:vista==="directorio"?G.greenLight:"transparent",color:vista==="directorio"?G.green:G.muted,fontWeight:600,fontSize:13,cursor:"pointer"}}>Directorio</button>
+          <button onClick={()=>setVista("aviso")} style={{padding:"8px 14px",borderRadius:8,border:"none",background:"transparent",color:G.muted,fontWeight:500,fontSize:13,cursor:"pointer"}}>Privacidad</button>
+          <button onClick={()=>setVista("registrar")} style={{padding:"9px 18px",borderRadius:10,border:"none",background:G.green,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Publicar perfil gratis</button>
+        </div>
+      </nav>
+
+      {vista==="inicio" && <Inicio setVista={setVista} trabajadores={trabajadores} />}
+      {vista==="directorio" && <Directorio filtrados={filtrados} filtros={filtros} setFiltros={setFiltros} loading={loading} onSelect={w=>{setSeleccionado(w);setVista("perfil");}} total={trabajadores.length} municipiosFiltrados={municipiosFiltrados} />}
+      {vista==="perfil" && seleccionado && <Perfil w={seleccionado} onBack={()=>setVista("directorio")} onContratar={()=>setModalSolicitud(true)} />}
+      {vista==="registrar" && <Registrar onSuccess={n=>{setVista("directorio");showToast(`¡Bienvenida ${n}! 🎉`);cargar();}} setVista={setVista} />}
+      {vista==="aviso" && <AvisoPrivacidad onBack={()=>setVista("inicio")} />}
+      {modalSolicitud && seleccionado && <ModalSolicitud trabajador={seleccionado} onClose={()=>setModalSolicitud(false)} onSuccess={()=>{setModalSolicitud(false);showToast(`Solicitud enviada ✓`);}} />}
+      {toast && <div style={{position:"fixed",bottom:28,left:"50%",transform:"translateX(-50%)",background:toast.tipo==="err"?G.red:"#111827",color:"#fff",padding:"14px 28px",borderRadius:40,fontSize:14,fontWeight:600,zIndex:999,whiteSpace:"nowrap",boxShadow:"0 8px 32px rgba(0,0,0,.2)"}}>{toast.msg}</div>}
     </div>
   );
 }
 
-// ── Nav ───────────────────────────────────────────────────────────────────────
-function Nav({ vista, setVista }) {
-  return (
-    <nav style={{ background: G.white, borderBottom: `1px solid ${G.border}`, padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64, position: "sticky", top: 0, zIndex: 100, boxShadow: "0 1px 8px rgba(0,0,0,.06)" }}>
-      <div onClick={() => setVista("inicio")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
-        <div style={{ width: 36, height: 36, background: G.green, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🧹</div>
-        <div>
-          <div style={{ fontWeight: 800, fontSize: 17, color: G.text, lineHeight: 1 }}>CleanForce</div>
-          <div style={{ fontSize: 10, color: G.muted, letterSpacing: 1 }}>MARKETPLACE</div>
-        </div>
-      </div>
-      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        <button onClick={() => setVista("directorio")} style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: vista === "directorio" ? G.greenLight : "transparent", color: vista === "directorio" ? G.green : G.muted, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Directorio</button>
-        <button onClick={() => setVista("aviso")} style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "transparent", color: G.muted, fontWeight: 500, fontSize: 13, cursor: "pointer" }}>Privacidad</button>
-        <button onClick={() => setVista("registrar")} style={{ padding: "9px 18px", borderRadius: 10, border: "none", background: G.green, color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Publicar perfil gratis</button>
-      </div>
-    </nav>
-  );
-}
-
-// ── Inicio ────────────────────────────────────────────────────────────────────
-function Inicio({ setVista, trabajadores, cargar }) {
-  useEffect(() => { cargar(); }, []);
-
+function Inicio({setVista,trabajadores}) {
   return (
     <div>
-      {/* Hero */}
-      <div style={{ background: `linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 50%, #BBF7D0 100%)`, padding: "80px 24px 64px", textAlign: "center", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: -60, right: -60, width: 300, height: 300, background: "rgba(22,163,74,.06)", borderRadius: "50%" }} />
-        <div style={{ position: "absolute", bottom: -40, left: -40, width: 200, height: 200, background: "rgba(22,163,74,.08)", borderRadius: "50%" }} />
-        <div style={{ position: "relative", maxWidth: 640, margin: "0 auto" }} className="fade-up">
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: G.white, border: `1px solid ${G.border}`, borderRadius: 20, padding: "6px 14px", fontSize: 12, fontWeight: 600, color: G.green, marginBottom: 24, boxShadow: "0 2px 8px rgba(0,0,0,.06)" }}>
-            ✨ Plataforma verificada de limpieza profesional
-          </div>
-          <h1 style={{ fontSize: "clamp(32px,6vw,56px)", fontWeight: 800, lineHeight: 1.1, color: G.text, marginBottom: 20 }}>
-            Encuentra personal de limpieza<br />
-            <span style={{ color: G.green }}>de confianza</span>
-          </h1>
-          <p style={{ fontSize: 18, color: G.muted, lineHeight: 1.7, marginBottom: 36, maxWidth: 500, margin: "0 auto 36px" }}>
-            Perfiles verificados con foto, identificación oficial y referencias laborales. Contratación directa, sin intermediarios.
-          </p>
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-            <button className="btn-pulse" onClick={() => setVista("directorio")} style={{ padding: "14px 32px", background: G.green, color: "#fff", border: "none", borderRadius: 12, fontWeight: 700, fontSize: 16, cursor: "pointer", boxShadow: "0 4px 20px rgba(22,163,74,.4)" }}>
-              Ver profesionales →
-            </button>
-            <button onClick={() => setVista("registrar")} style={{ padding: "14px 32px", background: G.white, color: G.green, border: `2px solid ${G.green}`, borderRadius: 12, fontWeight: 700, fontSize: 16, cursor: "pointer" }}>
-              Publicar mi perfil
-            </button>
+      <div style={{background:"linear-gradient(135deg,#F0FDF4,#DCFCE7,#BBF7D0)",padding:"72px 24px 56px",textAlign:"center",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:-60,right:-60,width:280,height:280,background:"rgba(22,163,74,.06)",borderRadius:"50%"}}/>
+        <div style={{position:"relative",maxWidth:640,margin:"0 auto"}} className="fu">
+          <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"#fff",border:`1px solid ${G.border}`,borderRadius:20,padding:"5px 14px",fontSize:12,fontWeight:600,color:G.green,marginBottom:20,boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>📍 📍 Para todo Nuevo León · ZMM y municipios</div>
+          <h1 style={{fontSize:"clamp(28px,5vw,50px)",fontWeight:800,lineHeight:1.1,color:G.text,marginBottom:16}}>Encuentra personal de limpieza<br/><span style={{color:G.green}}>de confianza en NL</span></h1>
+          <p style={{fontSize:17,color:G.muted,lineHeight:1.7,marginBottom:32,maxWidth:500,margin:"0 auto 32px"}}>Perfiles verificados con INE y referencias. Domésticas, cuidadoras, limpieza — en toda la ZMM y municipios de Nuevo León.</p>
+          <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
+            <button onClick={()=>setVista("directorio")} style={{padding:"14px 28px",background:G.green,color:"#fff",border:"none",borderRadius:12,fontWeight:700,fontSize:15,cursor:"pointer",boxShadow:"0 4px 20px rgba(22,163,74,.4)"}}>Ver profesionales →</button>
+            <button onClick={()=>setVista("registrar")} style={{padding:"14px 28px",background:"#fff",color:G.green,border:`2px solid ${G.green}`,borderRadius:12,fontWeight:700,fontSize:15,cursor:"pointer"}}>Publicar mi perfil</button>
           </div>
         </div>
       </div>
 
-      {/* Stats */}
-      <div style={{ background: G.white, borderBottom: `1px solid ${G.border}` }}>
-        <div style={{ maxWidth: 900, margin: "0 auto", padding: "28px 24px", display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 0 }}>
-          {[
-            { n: `${trabajadores.length}+`, l: "Profesionales activos", icon: "👷" },
-            { n: "100%", l: "Perfiles verificados", icon: "✅" },
-            { n: "4.8★", l: "Calificación promedio", icon: "⭐" },
-          ].map(({ n, l, icon }, i) => (
-            <div key={i} style={{ textAlign: "center", padding: "0 24px", borderRight: i < 2 ? `1px solid ${G.border}` : "none" }}>
-              <div style={{ fontSize: 28 }}>{icon}</div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: G.green, lineHeight: 1.2 }}>{n}</div>
-              <div style={{ fontSize: 13, color: G.muted, marginTop: 4 }}>{l}</div>
+      <div style={{background:G.white,borderBottom:`1px solid ${G.border}`}}>
+        <div style={{maxWidth:900,margin:"0 auto",padding:"24px",display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:0}}>
+          {[{n:`${trabajadores.length}+`,l:"Profesionales activas",icon:"🧼"},{n:"51 mun.",l:"Todo Nuevo León",icon:"🗺️"},{n:"100%",l:"Perfiles verificados",icon:"✅"},{n:"4.8★",l:"Calificación promedio",icon:"⭐"}].map(({n,l,icon},i)=>(
+            <div key={i} style={{textAlign:"center",padding:"0 16px",borderRight:i<3?`1px solid ${G.border}`:"none"}}>
+              <div style={{fontSize:24}}>{icon}</div>
+              <div style={{fontSize:24,fontWeight:800,color:G.green,lineHeight:1.2}}>{n}</div>
+              <div style={{fontSize:12,color:G.muted,marginTop:3}}>{l}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Cómo funciona */}
-      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "64px 24px" }}>
-        <h2 style={{ textAlign: "center", fontSize: 28, fontWeight: 800, marginBottom: 8 }}>¿Cómo funciona?</h2>
-        <p style={{ textAlign: "center", color: G.muted, marginBottom: 48 }}>En 3 pasos encuentras al profesional ideal</p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 24 }}>
-          {[
-            { n: "1", icon: "🔍", t: "Busca y filtra", d: "Explora perfiles verificados por especialidad, zona y turno. Todos con foto real e identificación." },
-            { n: "2", icon: "📋", t: "Revisa el perfil", d: "Ve su experiencia, calificaciones, referencias laborales y documentos verificados." },
-            { n: "3", icon: "🤝", t: "Contrata directo", d: "Envía tu solicitud y conecta directamente con el profesional. Sin comisiones ocultas." },
-          ].map(({ n, icon, t, d }) => (
-            <div key={n} style={{ background: G.white, border: `1px solid ${G.border}`, borderRadius: 16, padding: 28, textAlign: "center" }}>
-              <div style={{ width: 52, height: 52, background: G.greenLight, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, margin: "0 auto 16px" }}>{icon}</div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: G.green, letterSpacing: 1, marginBottom: 8 }}>PASO {n}</div>
-              <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 8 }}>{t}</div>
-              <div style={{ fontSize: 14, color: G.muted, lineHeight: 1.6 }}>{d}</div>
+      <div style={{maxWidth:1000,margin:"0 auto",padding:"48px 24px 32px"}}>
+        <h2 style={{textAlign:"center",fontSize:22,fontWeight:800,marginBottom:6}}>Cobertura en todo Nuevo León</h2>
+        <p style={{textAlign:"center",color:G.muted,fontSize:14,marginBottom:28}}>ZMM y municipios del interior del estado</p>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
+          {Object.entries(ZONAS_NL).map(([zona,municipios])=>(
+            <div key={zona} className="ch" onClick={()=>setVista("directorio")} style={{background:G.white,border:`1.5px solid ${G.border}`,borderRadius:14,padding:"18px 20px",cursor:"pointer"}}>
+              <div style={{fontWeight:700,fontSize:15,color:G.text,marginBottom:6}}>{zona}</div>
+              <div style={{fontSize:11,color:G.muted,lineHeight:1.6}}>{municipios.slice(0,4).join(", ")}{municipios.length>4?"...":""}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* CTA trabajadores */}
-      <div style={{ background: G.green, margin: "0 24px 64px", borderRadius: 24, padding: "48px 40px", textAlign: "center", maxWidth: 900, marginLeft: "auto", marginRight: "auto" }}>
-        <div style={{ fontSize: 36, marginBottom: 12 }}>💼</div>
-        <h2 style={{ fontSize: 26, fontWeight: 800, color: "#fff", marginBottom: 8 }}>¿Ofreces servicios de limpieza?</h2>
-        <p style={{ color: "rgba(255,255,255,.85)", marginBottom: 24, fontSize: 16 }}>Crea tu perfil gratis, sube tu identificación y empieza a recibir solicitudes de trabajo hoy.</p>
-        <button onClick={() => setVista("registrar")} style={{ padding: "12px 28px", background: "#fff", color: G.green, border: "none", borderRadius: 10, fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-          Crear perfil gratis →
-        </button>
-      </div>
-    </div>
-  );
-}
+      {/* Servicios del hogar */}
+      <div style={{background:G.white,borderTop:`1px solid ${G.border}`,borderBottom:`1px solid ${G.border}`}}>
+        <div style={{maxWidth:1060,margin:"0 auto",padding:"44px 24px"}}>
+          <h2 style={{textAlign:"center",fontSize:22,fontWeight:800,marginBottom:4}}>¿Qué tipo de apoyo necesitas?</h2>
+          <p style={{textAlign:"center",color:G.muted,fontSize:14,marginBottom:32}}>Personal verificado y con referencias para cada necesidad</p>
 
-// ── Directorio ────────────────────────────────────────────────────────────────
-function Directorio({ filtrados, filtros, setFiltros, loading, onSelect, total }) {
-  return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px" }}>
-      <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 26, fontWeight: 800, marginBottom: 4 }}>Directorio de profesionales</h1>
-        <p style={{ color: G.muted, fontSize: 14 }}>{total} profesionales registrados · todos verificados</p>
-      </div>
-
-      {/* Búsqueda */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
-        <div style={{ flex: 1, minWidth: 200, position: "relative" }}>
-          <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 16 }}>🔍</span>
-          <input style={{ width: "100%", padding: "11px 12px 11px 38px", border: `1.5px solid ${G.border}`, borderRadius: 10, fontSize: 14, background: G.white, outline: "none" }} placeholder="Buscar por nombre o especialidad..." value={filtros.q} onChange={e => setFiltros(f => ({ ...f, q: e.target.value }))} />
-        </div>
-        {[
-          { key: "zona", opts: ["Todas las zonas", ...["Norte","Sur","Centro","Oriente","Poniente"]] },
-          { key: "especialidad", opts: ["Todas las especialidades", ...ESPECIALIDADES] },
-        ].map(({ key, opts }) => (
-          <select key={key} style={{ padding: "11px 14px", border: `1.5px solid ${G.border}`, borderRadius: 10, fontSize: 14, background: G.white, cursor: "pointer", outline: "none", color: filtros[key] ? G.text : G.muted }} value={filtros[key]} onChange={e => setFiltros(f => ({ ...f, [key]: e.target.value === opts[0] ? "" : e.target.value }))}>
-            {opts.map(o => <option key={o}>{o}</option>)}
-          </select>
-        ))}
-      </div>
-
-      {loading && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 20 }}>
-          {[1,2,3,4,5,6].map(i => (
-            <div key={i} style={{ background: G.white, border: `1px solid ${G.border}`, borderRadius: 16, padding: 24, height: 280, background: "linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite" }} />
-          ))}
-        </div>
-      )}
-
-      {!loading && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 20 }}>
-          {filtrados.length === 0 && (
-            <div style={{ gridColumn: "1/-1", textAlign: "center", padding: 60, color: G.muted }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>🔍</div>
-              <div style={{ fontWeight: 600, fontSize: 16 }}>Sin resultados</div>
-              <div style={{ fontSize: 14, marginTop: 4 }}>Intenta con otros filtros</div>
+          {/* Servicios del hogar */}
+          <div style={{marginBottom:32}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+              <div style={{width:32,height:32,background:G.greenPale,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>🏠</div>
+              <h3 style={{fontSize:15,fontWeight:700,color:G.text}}>Servicios del hogar</h3>
             </div>
-          )}
-          {filtrados.map((w, i) => <TarjetaTrabajador key={w.id} w={w} i={i} onSelect={() => onSelect(w)} />)}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function TarjetaTrabajador({ w, onSelect }) {
-  const col = colorPara(w.nombre);
-  return (
-    <div className="card-hover" onClick={onSelect} style={{ background: G.white, border: `1.5px solid ${G.border}`, borderRadius: 16, padding: 24, cursor: "pointer", position: "relative", overflow: "hidden" }}>
-      {w.premium && <div style={{ position: "absolute", top: 14, right: 14, background: "#FEF3C7", color: "#92400E", fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 20 }}>⭐ PREMIUM</div>}
-      {w.verificado && <div style={{ position: "absolute", top: w.premium ? 38 : 14, right: 14, background: G.greenLight, color: G.greenDark, fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 20 }}>✓ VERIFICADO</div>}
-
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
-        {w.foto_url ? (
-          <img src={w.foto_url} alt={w.nombre} style={{ width: 60, height: 60, borderRadius: "50%", objectFit: "cover", border: `3px solid ${G.greenLight}` }} onError={e => e.target.style.display = "none"} />
-        ) : (
-          <div style={{ width: 60, height: 60, borderRadius: "50%", background: col.bg, color: col.text, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, fontWeight: 800, flexShrink: 0 }}>
-            {iniciales(w.nombre)}
-          </div>
-        )}
-        <div>
-          <div style={{ fontWeight: 700, fontSize: 16, color: G.text }}>{w.nombre}</div>
-          <div style={{ fontSize: 12, color: G.green, fontWeight: 600, marginTop: 2 }}>{w.especialidad}</div>
-          <div style={{ fontSize: 12, color: G.muted, marginTop: 2 }}>📍 {w.zona} · {w.turno?.split(" ")[0]}</div>
-        </div>
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
-        <span style={{ color: "#F59E0B", fontSize: 14 }}>{estrellas(w.rating)}</span>
-        <span style={{ fontSize: 12, color: G.muted }}>{w.rating} ({w.reviews} reseñas)</span>
-      </div>
-
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
-        {(w.tags || []).slice(0, 3).map(t => (
-          <span key={t} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 20, background: G.greenPale, color: G.greenDark, fontWeight: 500 }}>{t}</span>
-        ))}
-      </div>
-
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: `1px solid ${G.border}`, paddingTop: 14 }}>
-        <div>
-          <span style={{ fontSize: 20, fontWeight: 800, color: G.text }}>${w.tarifa}</span>
-          <span style={{ fontSize: 12, color: G.muted }}> MXN/hr</span>
-        </div>
-        <button style={{ padding: "8px 16px", background: G.green, color: "#fff", border: "none", borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: "pointer" }}>
-          Ver perfil →
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ── Perfil completo ───────────────────────────────────────────────────────────
-function Perfil({ w, onBack, onContratar }) {
-  const col = colorPara(w.nombre);
-  return (
-    <div style={{ maxWidth: 800, margin: "0 auto", padding: "32px 24px" }}>
-      <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: G.muted, cursor: "pointer", fontSize: 14, fontWeight: 600, marginBottom: 24 }}>
-        ← Volver al directorio
-      </button>
-
-      <div style={{ background: G.white, border: `1.5px solid ${G.border}`, borderRadius: 20, overflow: "hidden" }}>
-        {/* Header */}
-        <div style={{ background: `linear-gradient(135deg, ${G.greenPale}, ${G.greenLight})`, padding: "32px 32px 24px" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 20, flexWrap: "wrap" }}>
-            {w.foto_url ? (
-              <img src={w.foto_url} alt={w.nombre} style={{ width: 88, height: 88, borderRadius: "50%", objectFit: "cover", border: "4px solid #fff", boxShadow: "0 4px 16px rgba(0,0,0,.12)" }} />
-            ) : (
-              <div style={{ width: 88, height: 88, borderRadius: "50%", background: col.bg, color: col.text, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 800, border: "4px solid #fff", boxShadow: "0 4px 16px rgba(0,0,0,.12)", flexShrink: 0 }}>
-                {iniciales(w.nombre)}
-              </div>
-            )}
-            <div style={{ flex: 1 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 4 }}>
-                <h1 style={{ fontSize: 24, fontWeight: 800 }}>{w.nombre}</h1>
-                {w.verificado && <span style={{ background: G.green, color: "#fff", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20 }}>✓ Verificado</span>}
-                {w.premium && <span style={{ background: "#FEF3C7", color: "#92400E", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20 }}>⭐ Premium</span>}
-              </div>
-              <div style={{ color: G.green, fontWeight: 600, fontSize: 15, marginBottom: 6 }}>{w.especialidad}</div>
-              <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontSize: 13, color: G.muted }}>
-                <span>📍 Zona {w.zona}</span>
-                <span>🕐 {w.turno}</span>
-                <span>💼 {w.experiencia} de experiencia</span>
-              </div>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 32, fontWeight: 800, color: G.text }}>${w.tarifa}</div>
-              <div style={{ fontSize: 13, color: G.muted }}>MXN / hora</div>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ padding: 32 }}>
-          {/* Rating */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
-            <span style={{ color: "#F59E0B", fontSize: 20 }}>{estrellas(w.rating)}</span>
-            <span style={{ fontWeight: 700, fontSize: 18 }}>{w.rating}</span>
-            <span style={{ color: G.muted, fontSize: 14 }}>({w.reviews} reseñas)</span>
-          </div>
-
-          {/* Descripción */}
-          {w.descripcion && (
-            <div style={{ marginBottom: 24 }}>
-              <h3 style={{ fontWeight: 700, fontSize: 15, marginBottom: 8, color: G.text }}>Sobre mí</h3>
-              <p style={{ color: G.muted, lineHeight: 1.7, fontSize: 14 }}>{w.descripcion}</p>
-            </div>
-          )}
-
-          {/* Especialidades */}
-          {w.tags?.length > 0 && (
-            <div style={{ marginBottom: 24 }}>
-              <h3 style={{ fontWeight: 700, fontSize: 15, marginBottom: 10 }}>Especialidades</h3>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {w.tags.map(t => <span key={t} style={{ background: G.greenPale, color: G.greenDark, fontSize: 13, padding: "6px 14px", borderRadius: 20, fontWeight: 500 }}>{t}</span>)}
-              </div>
-            </div>
-          )}
-
-          {/* Verificación */}
-          <div style={{ background: G.greenPale, border: `1px solid ${G.greenLight}`, borderRadius: 12, padding: 16, marginBottom: 24 }}>
-            <h3 style={{ fontWeight: 700, fontSize: 14, color: G.greenDark, marginBottom: 10 }}>🛡️ Estado de verificación</h3>
-            <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(155px,1fr))",gap:8}}>
               {[
-                { l: "Foto de perfil", ok: !!w.foto_url },
-                { l: "Selfie con INE", ok: !!w.selfie_ine_url },
-                { l: "Referencias laborales", ok: w.referencias?.length > 0 },
-              ].map(({ l, ok }) => (
-                <div key={l} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
-                  <span style={{ fontSize: 16 }}>{ok ? "✅" : "⏳"}</span>
-                  <span style={{ color: ok ? G.greenDark : G.muted, fontWeight: ok ? 600 : 400 }}>{l}</span>
+                {icon:"🧹",t:"Empleada doméstica general"},
+                {icon:"🧺",t:"Planchado y lavandería"},
+                {icon:"🍳",t:"Elaboración de comidas"},
+                {icon:"👶",t:"Cuidadora de niños"},
+                {icon:"🧓",t:"Cuidadora de adulto mayor"},
+                {icon:"🐾",t:"Limpieza zona mascotas"},
+              ].map(({icon,t})=>(
+                <div key={t} className="ch" onClick={()=>setVista("directorio")} style={{background:G.greenPale,border:`1.5px solid ${G.greenLight}`,borderRadius:10,padding:"14px 10px",cursor:"pointer",textAlign:"center"}}>
+                  <div style={{fontSize:26,marginBottom:5}}>{icon}</div>
+                  <div style={{fontSize:11,fontWeight:600,color:G.greenDark,lineHeight:1.4}}>{t}</div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Referencias */}
-          {w.referencias?.length > 0 && (
-            <div style={{ marginBottom: 24 }}>
-              <h3 style={{ fontWeight: 700, fontSize: 15, marginBottom: 10 }}>Referencias laborales</h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {w.referencias.map((r, i) => (
-                  <div key={i} style={{ background: G.bg, border: `1px solid ${G.border}`, borderRadius: 10, padding: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: 14 }}>{r.nombre}</div>
-                      <div style={{ fontSize: 12, color: G.muted }}>{r.relacion}</div>
-                    </div>
-                    <div style={{ fontSize: 13, color: G.green, fontWeight: 600 }}>📞 {r.telefono}</div>
-                  </div>
+          {/* Limpieza especializada */}
+          <div style={{marginBottom:16}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+              <div style={{width:32,height:32,background:"#FFF7ED",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>✨</div>
+              <h3 style={{fontSize:15,fontWeight:700,color:G.text}}>Limpieza especializada</h3>
+              <span style={{background:"#FEF3C7",color:"#92400E",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:20}}>NUEVO</span>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(155px,1fr))",gap:8}}>
+              {[
+                {icon:"🏗️",t:"Post-construcción",sub:"Obra nueva o remodelación"},
+                {icon:"📦",t:"Mudanza",sub:"Entrada o salida del hogar"},
+                {icon:"🧽",t:"Limpieza profunda",sub:"De piso a techo"},
+                {icon:"💧",t:"Desinfección",sub:"Sanitización completa"},
+                {icon:"🏢",t:"Oficinas y comercios",sub:"Espacios de trabajo"},
+                {icon:"🏭",t:"Industrial",sub:"Naves y fábricas"},
+              ].map(({icon,t,sub})=>(
+                <div key={t} className="ch" onClick={()=>setVista("directorio")} style={{background:"#FFFBEB",border:"1.5px solid #FEF3C7",borderRadius:10,padding:"14px 10px",cursor:"pointer",textAlign:"center"}}>
+                  <div style={{fontSize:26,marginBottom:5}}>{icon}</div>
+                  <div style={{fontSize:11,fontWeight:700,color:"#92400E",lineHeight:1.3,marginBottom:2}}>{t}</div>
+                  <div style={{fontSize:10,color:"#B45309"}}>{sub}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Diferenciadores vs competencia */}
+          <div style={{background:"linear-gradient(135deg,#F0FDF4,#DCFCE7)",borderRadius:14,padding:"20px 24px",display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
+            <div style={{fontSize:28}}>🛡️</div>
+            <div style={{flex:1}}>
+              <div style={{fontWeight:700,fontSize:14,color:G.greenDark,marginBottom:4}}>CleanForce vs grupos de Facebook</div>
+              <div style={{display:"flex",gap:20,flexWrap:"wrap"}}>
+                {["✅ Perfiles verificados con INE","✅ Referencias laborales comprobables","✅ Foto e identificación oficial","✅ Calificaciones reales de empleadores"].map(d=>(
+                  <span key={d} style={{fontSize:12,color:G.greenDark,fontWeight:500}}>{d}</span>
                 ))}
               </div>
             </div>
-          )}
+          </div>
+        </div>
+      </div>
 
-          <button onClick={onContratar} style={{ width: "100%", padding: "16px", background: G.green, color: "#fff", border: "none", borderRadius: 12, fontWeight: 700, fontSize: 16, cursor: "pointer", boxShadow: "0 4px 16px rgba(22,163,74,.35)" }}>
-            Enviar solicitud de contratación →
-          </button>
+      <div style={{maxWidth:900,margin:"48px auto",padding:"0 24px 48px"}}>
+        <div style={{background:G.green,borderRadius:20,padding:"44px 40px",textAlign:"center",color:"#fff"}}>
+          <div style={{fontSize:36,marginBottom:10}}>💼</div>
+          <h2 style={{fontSize:24,fontWeight:800,marginBottom:8}}>¿Buscas trabajo en Nuevo León?</h2>
+          <p style={{opacity:.85,marginBottom:24,fontSize:15}}>Crea tu perfil gratuito, sube tu INE y referencias, y empieza a recibir solicitudes de empleadores verificados en tu zona.</p>
+          <button onClick={()=>setVista("registrar")} style={{padding:"12px 28px",background:"#fff",color:G.green,border:"none",borderRadius:10,fontWeight:700,fontSize:15,cursor:"pointer"}}>Crear perfil gratis →</button>
         </div>
       </div>
     </div>
   );
 }
 
-// ── Modal Solicitud ───────────────────────────────────────────────────────────
-function ModalSolicitud({ trabajador, onClose, onSuccess }) {
-  const [form, setForm] = useState({ nombre: "", email: "", telefono: "", mensaje: "" });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+function Directorio({filtrados,filtros,setFiltros,loading,onSelect,total,municipiosFiltrados}) {
+  const [mostrarFiltros,setMostrarFiltros] = useState(true);
+  const inp = {width:"100%",padding:"9px 12px",border:`1.5px solid ${G.border}`,borderRadius:8,fontSize:13,outline:"none",background:G.white};
+  const lbl = {display:"block",fontSize:10,fontWeight:700,color:G.muted,marginBottom:5,textTransform:"uppercase",letterSpacing:.5};
+  const hayFiltros = filtros.zona||filtros.municipio||(filtros.tiposTrabajo||[]).length>0||filtros.jornada||filtros.tipoInmueble;
+
+  return (
+    <div style={{maxWidth:1200,margin:"0 auto",padding:"28px 24px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:18,flexWrap:"wrap",gap:10}}>
+        <div><h1 style={{fontSize:22,fontWeight:800,marginBottom:2}}>Directorio Nuevo León</h1><p style={{color:G.muted,fontSize:12}}>{filtrados.length} de {total} profesionales · Nuevo León</p></div>
+        <button onClick={()=>setMostrarFiltros(!mostrarFiltros)} style={{padding:"8px 16px",background:G.white,border:`1.5px solid ${G.border}`,borderRadius:8,fontSize:12,cursor:"pointer",fontWeight:600}}>{mostrarFiltros?"Ocultar filtros ▲":"Filtros ▼"}</button>
+      </div>
+
+      <div style={{position:"relative",marginBottom:12}}>
+        <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:15}}>🔍</span>
+        <input style={{...inp,paddingLeft:36,fontSize:14,width:"100%"}} placeholder="Buscar por nombre, colonia, tipo de trabajo..." value={filtros.q} onChange={e=>setFiltros(f=>({...f,q:e.target.value}))} />
+      </div>
+
+      {mostrarFiltros && (
+        <div style={{background:G.white,border:`1.5px solid ${G.border}`,borderRadius:14,padding:18,marginBottom:18}} className="fu">
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(190px,1fr))",gap:12}}>
+            <div><label style={lbl}>Zona</label>
+              <select style={inp} value={filtros.zona} onChange={e=>setFiltros(f=>({...f,zona:e.target.value,municipio:""}))}>
+                <option value="">Todo Nuevo León</option>
+                {Object.keys(ZONAS_NL).map(z=><option key={z}>{z}</option>)}
+              </select>
+            </div>
+            <div><label style={lbl}>Municipio / Colonia</label>
+              <select style={inp} value={filtros.municipio} onChange={e=>setFiltros(f=>({...f,municipio:e.target.value}))}>
+                <option value="">Todos</option>
+                {municipiosFiltrados.map(m=><option key={m}>{m}</option>)}
+              </select>
+            </div>
+            <div style={{gridColumn:"1/-1"}}><label style={lbl}>Tipo de trabajo (puedes elegir varios)</label>
+              <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:4}}>
+                {TIPOS_TRABAJO.map(t=>{
+                  const active=(filtros.tiposTrabajo||[]).includes(t);
+                  return <button key={t} onClick={()=>setFiltros(f=>{const prev=f.tiposTrabajo||[];return{...f,tiposTrabajo:active?prev.filter(x=>x!==t):[...prev,t]}})} style={{padding:"5px 11px",borderRadius:20,border:`1.5px solid ${active?G.green:G.border}`,background:active?G.greenPale:G.white,color:active?G.greenDark:G.muted,fontSize:11,cursor:"pointer",fontWeight:active?600:400,transition:"all .15s"}}>{t}</button>
+                })}
+              </div>
+            </div>
+            <div><label style={lbl}>Jornada</label>
+              <select style={inp} value={filtros.jornada} onChange={e=>setFiltros(f=>({...f,jornada:e.target.value}))}>
+                <option value="">Todas</option>
+                {JORNADAS.map(j=><option key={j}>{j}</option>)}
+              </select>
+            </div>
+            <div><label style={lbl}>Tipo de inmueble</label>
+              <select style={inp} value={filtros.tipoInmueble} onChange={e=>setFiltros(f=>({...f,tipoInmueble:e.target.value}))}>
+                <option value="">Cualquiera</option>
+                {TIPOS_INMUEBLE.map(t=><option key={t}>{t}</option>)}
+              </select>
+            </div>
+            <div><label style={lbl}>Tarifa máx/hr: ${filtros.tarifa}</label>
+              <input type="range" min={50} max={500} step={10} value={filtros.tarifa} onChange={e=>setFiltros(f=>({...f,tarifa:+e.target.value}))} style={{width:"100%",accentColor:G.green,marginTop:8}} />
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:G.muted,marginTop:2}}><span>$50</span><span style={{color:G.green,fontWeight:700}}>${filtros.tarifa}/hr</span><span>$500</span></div>
+            </div>
+          </div>
+          {hayFiltros && <button onClick={()=>setFiltros({q:"",zona:"",municipio:"",tiposTrabajo:[],jornada:"",tipoInmueble:"",tarifa:500})} style={{marginTop:10,padding:"5px 12px",background:"#FEF2F2",color:G.red,border:"none",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer"}}>✕ Limpiar filtros</button>}
+        </div>
+      )}
+
+      {loading ? (
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:14}}>
+          {[1,2,3,4,5,6].map(i=><div key={i} style={{height:280,borderRadius:16,background:"linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%)",backgroundSize:"200% 100%",animation:"shimmer 1.5s infinite"}}/>)}
+        </div>
+      ) : (
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:14}}>
+          {filtrados.length===0 && <div style={{gridColumn:"1/-1",textAlign:"center",padding:60,color:G.muted}}><div style={{fontSize:48,marginBottom:10}}>🔍</div><div style={{fontWeight:700,fontSize:16}}>Sin resultados</div><div style={{fontSize:13,marginTop:4}}>Intenta con otros filtros</div></div>}
+          {filtrados.map(w=><TarjetaTrabajador key={w.id} w={w} onSelect={()=>onSelect(w)} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TarjetaTrabajador({w,onSelect}) {
+  const col = colorPara(w.nombre);
+  const jornadaLabel = w.jornada==="De planta (quedada)"?"🏠 De planta":w.jornada==="Entrada por salida (lunes a viernes)"?"📅 E x S L-V":w.jornada==="Entrada por salida (fines de semana)"?"📅 E x S Fin Sem":w.jornada==="Medio tiempo"?"⏰ Medio tiempo":w.jornada?"⏰ "+w.jornada.split(" ")[0]:null;
+  return (
+    <div className="ch" onClick={onSelect} style={{background:G.white,border:`1.5px solid ${G.border}`,borderRadius:16,padding:20,cursor:"pointer",position:"relative"}}>
+      {w.premium && <div style={{position:"absolute",top:10,right:10,background:"#FEF3C7",color:"#92400E",fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:20}}>⭐ Premium</div>}
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
+        {w.foto_url ? <img src={w.foto_url} alt={w.nombre} style={{width:52,height:52,borderRadius:"50%",objectFit:"cover",border:`3px solid ${G.greenLight}`,flexShrink:0}} onError={e=>e.target.style.display="none"}/> : <div style={{width:52,height:52,borderRadius:"50%",background:col.bg,color:col.text,display:"flex",alignItems:"center",justifyContent:"center",fontSize:19,fontWeight:800,flexShrink:0}}>{iniciales(w.nombre)}</div>}
+        <div style={{minWidth:0}}>
+          <div style={{fontWeight:700,fontSize:14,color:G.text,marginBottom:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{w.nombre}</div>
+          <div style={{fontSize:11,color:G.green,fontWeight:600}}>{w.especialidad}</div>
+          <div style={{fontSize:10,color:G.muted,marginTop:1}}>📍 {w.municipio} · {w.zona_metro}</div>
+        </div>
+      </div>
+      {jornadaLabel && <div style={{background:G.greenPale,color:G.greenDark,fontSize:10,fontWeight:600,padding:"3px 9px",borderRadius:20,display:"inline-block",marginBottom:8}}>{jornadaLabel}</div>}
+      <div style={{display:"flex",flexWrap:"wrap",gap:3,marginBottom:10}}>
+        {(w.tipo_trabajo||[]).slice(0,3).map(t=><span key={t} style={{fontSize:9,padding:"2px 7px",borderRadius:20,background:G.bg,color:G.muted,border:`1px solid ${G.border}`}}>{t}</span>)}
+        {(w.tipo_trabajo||[]).length>3 && <span style={{fontSize:9,padding:"2px 7px",borderRadius:20,background:G.bg,color:G.muted}}>+{(w.tipo_trabajo||[]).length-3}</span>}
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:12}}>
+        <span style={{color:"#F59E0B",fontSize:12}}>{estrellas(w.rating)}</span>
+        <span style={{fontSize:10,color:G.muted}}>{w.rating} ({w.reviews})</span>
+        {w.verificado && <span style={{marginLeft:"auto",background:G.greenLight,color:G.greenDark,fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:20}}>✓ Verificada</span>}
+      </div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:`1px solid ${G.border}`,paddingTop:10}}>
+        <div><span style={{fontSize:18,fontWeight:800}}>${w.tarifa}</span><span style={{fontSize:10,color:G.muted}}>/{w.tipo_tarifa==="Por día"?"día":w.tipo_tarifa==="Por semana"?"sem":w.tipo_tarifa==="Por quincena"?"qna":"hr"}</span></div>
+        <button style={{padding:"6px 12px",background:G.green,color:"#fff",border:"none",borderRadius:8,fontWeight:600,fontSize:11,cursor:"pointer"}}>Ver perfil →</button>
+      </div>
+    </div>
+  );
+}
+
+function Perfil({w,onBack,onContratar}) {
+  const col = colorPara(w.nombre);
+  return (
+    <div style={{maxWidth:760,margin:"0 auto",padding:"28px 24px 64px"}}>
+      <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",color:G.muted,cursor:"pointer",fontSize:13,fontWeight:600,marginBottom:18}}>← Volver al directorio</button>
+      <div style={{background:G.white,border:`1.5px solid ${G.border}`,borderRadius:20,overflow:"hidden"}}>
+        <div style={{background:"linear-gradient(135deg,#F0FDF4,#DCFCE7)",padding:"24px 24px 18px"}}>
+          <div style={{display:"flex",alignItems:"flex-start",gap:16,flexWrap:"wrap"}}>
+            {w.foto_url ? <img src={w.foto_url} alt={w.nombre} style={{width:80,height:80,borderRadius:"50%",objectFit:"cover",border:"4px solid #fff",boxShadow:"0 4px 16px rgba(0,0,0,.1)",flexShrink:0}}/> : <div style={{width:80,height:80,borderRadius:"50%",background:col.bg,color:col.text,display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,fontWeight:800,border:"4px solid #fff",flexShrink:0}}>{iniciales(w.nombre)}</div>}
+            <div style={{flex:1}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:3}}>
+                <h1 style={{fontSize:20,fontWeight:800}}>{w.nombre}</h1>
+                {w.verificado && <span style={{background:G.green,color:"#fff",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:20}}>✓ Verificada</span>}
+                {w.premium && <span style={{background:"#FEF3C7",color:"#92400E",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:20}}>⭐ Premium</span>}
+              </div>
+              <div style={{color:G.green,fontWeight:600,fontSize:13,marginBottom:6}}>{w.especialidad}</div>
+              <div style={{display:"flex",gap:12,flexWrap:"wrap",fontSize:11,color:G.muted}}>
+                <span>📍 {w.municipio}, NL</span><span>🗺️ Zona {w.zona_metro}</span><span>💼 {w.experiencia}</span>{w.jornada && <span>🕐 {w.jornada}</span>}
+              </div>
+            </div>
+            <div style={{textAlign:"right"}}><div style={{fontSize:28,fontWeight:800}}>${w.tarifa}</div><div style={{fontSize:11,color:G.muted}}>MXN / {w.tipo_tarifa||"hora"}</div></div>
+          </div>
+        </div>
+        <div style={{padding:24}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:18}}>
+            <span style={{color:"#F59E0B",fontSize:17}}>{estrellas(w.rating)}</span>
+            <span style={{fontWeight:700,fontSize:16}}>{w.rating}</span>
+            <span style={{color:G.muted,fontSize:12}}>({w.reviews} reseñas)</span>
+          </div>
+          {w.descripcion && <div style={{marginBottom:18}}><h3 style={{fontWeight:700,fontSize:13,marginBottom:6}}>Sobre mí</h3><p style={{color:G.muted,lineHeight:1.7,fontSize:13}}>{w.descripcion}</p></div>}
+          {w.tipo_trabajo?.length>0 && <div style={{marginBottom:18}}><h3 style={{fontWeight:700,fontSize:13,marginBottom:8}}>Tipos de trabajo</h3><div style={{display:"flex",flexWrap:"wrap",gap:6}}>{w.tipo_trabajo.map(t=><span key={t} style={{background:G.greenPale,color:G.greenDark,fontSize:12,padding:"4px 11px",borderRadius:20,fontWeight:500}}>{t}</span>)}</div></div>}
+          {w.tipo_inmueble?.length>0 && <div style={{marginBottom:18}}><h3 style={{fontWeight:700,fontSize:13,marginBottom:8}}>Experiencia en tipo de inmueble</h3><div style={{display:"flex",flexWrap:"wrap",gap:6}}>{w.tipo_inmueble.map(t=><span key={t} style={{background:"#EFF6FF",color:"#1D4ED8",fontSize:12,padding:"4px 11px",borderRadius:20,fontWeight:500}}>{t}</span>)}</div></div>}
+          {w.edades_ninos?.length>0 && <div style={{marginBottom:18}}><h3 style={{fontWeight:700,fontSize:13,marginBottom:8}}>👶 Edades de niños con experiencia</h3><div style={{display:"flex",flexWrap:"wrap",gap:6}}>{w.edades_ninos.map(e=><span key={e} style={{background:"#FFF7ED",color:"#C2410C",fontSize:12,padding:"4px 11px",borderRadius:20,fontWeight:500}}>{e}</span>)}</div></div>}
+          {w.servicios_especiales?.length>0 && <div style={{marginBottom:18}}><h3 style={{fontWeight:700,fontSize:13,marginBottom:8}}>✨ Servicios especiales</h3><div style={{display:"flex",flexWrap:"wrap",gap:6}}>{w.servicios_especiales.map(s=><span key={s} style={{background:"#F0FDF4",color:"#15803D",fontSize:12,padding:"4px 11px",borderRadius:20,fontWeight:500}}>{s}</span>)}</div></div>}
+          <div style={{background:G.greenPale,border:`1px solid ${G.greenLight}`,borderRadius:12,padding:12,marginBottom:18}}>
+            <h3 style={{fontWeight:700,fontSize:12,color:G.greenDark,marginBottom:8}}>🛡️ Verificación</h3>
+            <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
+              {[["Foto de perfil",!!w.foto_url],["Selfie con INE",!!w.selfie_ine_url],["Referencias",w.referencias?.length>0]].map(([l,ok])=>(
+                <div key={l} style={{display:"flex",alignItems:"center",gap:4,fontSize:12}}><span>{ok?"✅":"⏳"}</span><span style={{color:ok?G.greenDark:G.muted,fontWeight:ok?600:400}}>{l}</span></div>
+              ))}
+            </div>
+          </div>
+          {w.referencias?.length>0 && <div style={{marginBottom:18}}><h3 style={{fontWeight:700,fontSize:13,marginBottom:8}}>Referencias laborales</h3>{w.referencias.map((r,i)=><div key={i} style={{background:G.bg,border:`1px solid ${G.border}`,borderRadius:10,padding:11,marginBottom:7,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontWeight:600,fontSize:13}}>{r.nombre}</div><div style={{fontSize:11,color:G.muted}}>{r.relacion}</div></div><div style={{fontSize:12,color:G.green,fontWeight:600}}>📞 {r.telefono}</div></div>)}</div>}
+          <button onClick={onContratar} style={{width:"100%",padding:13,background:G.green,color:"#fff",border:"none",borderRadius:12,fontWeight:700,fontSize:14,cursor:"pointer",boxShadow:"0 4px 16px rgba(22,163,74,.3)"}}>Enviar solicitud de contratación →</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ModalSolicitud({trabajador,onClose,onSuccess}) {
+  const [form,setForm] = useState({nombre:"",email:"",telefono:"",mensaje:"",zona_trabajo:"",tipo_inmueble:"",jornada_requerida:""});
+  const [loading,setLoading] = useState(false);
+  const [error,setError] = useState(null);
+  const inp = {width:"100%",padding:"10px 12px",border:`1.5px solid ${G.border}`,borderRadius:8,fontSize:13,outline:"none"};
+  const lbl = {display:"block",fontSize:10,fontWeight:700,color:G.muted,marginBottom:5,textTransform:"uppercase",letterSpacing:.5};
 
   const enviar = async () => {
-    if (!form.nombre || !form.email) { setError("Nombre y email son requeridos."); return; }
-    setLoading(true); setError(null);
+    if(!form.nombre||!form.email){setError("Nombre y email requeridos.");return;}
+    setLoading(true);setError(null);
     try {
-      await db.post("solicitudes", { trabajador_id: trabajador.id, empleador_nombre: form.nombre, empleador_email: form.email, mensaje: form.mensaje, estado: "pendiente" });
+      await db.post("solicitudes",{trabajador_id:trabajador.id,empleador_nombre:form.nombre,empleador_email:form.email,mensaje:`${form.mensaje}\nZona: ${form.zona_trabajo}\nInmueble: ${form.tipo_inmueble}\nJornada: ${form.jornada_requerida}`,estado:"pendiente"});
       onSuccess();
-    } catch { setError("Error al enviar. Intenta de nuevo."); }
-    finally { setLoading(false); }
+    } catch { setError("Error al enviar."); } finally { setLoading(false); }
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
-      <div style={{ background: G.white, borderRadius: 20, maxWidth: 480, width: "100%", padding: 32 }} onClick={e => e.stopPropagation()}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 800 }}>Contactar a {trabajador.nombre?.split(" ")[0]}</h2>
-          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: G.muted }}>✕</button>
-        </div>
-        {[["Tu nombre o empresa", "nombre", "text"], ["Tu email", "email", "email"], ["Tu teléfono (opcional)", "telefono", "tel"]].map(([label, key, type]) => (
-          <div key={key} style={{ marginBottom: 14 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: G.muted, marginBottom: 6, textTransform: "uppercase", letterSpacing: .5 }}>{label}</label>
-            <input style={{ width: "100%", padding: "11px 14px", border: `1.5px solid ${G.border}`, borderRadius: 10, fontSize: 14, outline: "none" }} type={type} value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} />
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={onClose}>
+      <div style={{background:G.white,borderRadius:20,maxWidth:500,width:"100%",padding:26,maxHeight:"90vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:18}}><h2 style={{fontSize:16,fontWeight:800}}>Contactar a {trabajador.nombre?.split(" ")[0]}</h2><button onClick={onClose} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:G.muted}}>✕</button></div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+          {[["Tu nombre o empresa *","nombre","text"],["Tu email *","email","email"],["Teléfono","telefono","tel"]].map(([l,k,t])=>(
+            <div key={k} style={{gridColumn:k==="nombre"?"1/-1":"auto"}}>
+              <label style={lbl}>{l}</label>
+              <input style={inp} type={t} value={form[k]} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))} />
+            </div>
+          ))}
+          <div><label style={lbl}>Municipio / Zona</label>
+            <select style={inp} value={form.zona_trabajo} onChange={e=>setForm(f=>({...f,zona_trabajo:e.target.value}))}>
+              <option value="">Seleccionar...</option>
+              {TODOS_MUNICIPIOS.map(m=><option key={m}>{m}</option>)}
+            </select>
           </div>
-        ))}
-        <div style={{ marginBottom: 20 }}>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: G.muted, marginBottom: 6, textTransform: "uppercase", letterSpacing: .5 }}>Mensaje (opcional)</label>
-          <textarea style={{ width: "100%", padding: "11px 14px", border: `1.5px solid ${G.border}`, borderRadius: 10, fontSize: 14, outline: "none", minHeight: 80, resize: "vertical" }} value={form.mensaje} onChange={e => setForm(f => ({ ...f, mensaje: e.target.value }))} placeholder="Describe el trabajo, horarios, ubicación..." />
+          <div><label style={lbl}>Tipo de inmueble</label>
+            <select style={inp} value={form.tipo_inmueble} onChange={e=>setForm(f=>({...f,tipo_inmueble:e.target.value}))}>
+              <option value="">Seleccionar...</option>
+              {TIPOS_INMUEBLE.map(t=><option key={t}>{t}</option>)}
+            </select>
+          </div>
+          <div style={{gridColumn:"1/-1"}}><label style={lbl}>Jornada requerida</label>
+            <select style={inp} value={form.jornada_requerida} onChange={e=>setForm(f=>({...f,jornada_requerida:e.target.value}))}>
+              <option value="">Seleccionar...</option>
+              {JORNADAS.map(j=><option key={j}>{j}</option>)}
+            </select>
+          </div>
+          <div style={{gridColumn:"1/-1"}}><label style={lbl}>Descripción del trabajo</label>
+            <textarea style={{...inp,minHeight:75,resize:"vertical"}} value={form.mensaje} onChange={e=>setForm(f=>({...f,mensaje:e.target.value}))} placeholder="Actividades, horarios, sueldo ofrecido, zona exacta..." />
+          </div>
         </div>
-        {error && <div style={{ color: G.red, fontSize: 13, marginBottom: 12 }}>{error}</div>}
-        <button style={{ width: "100%", padding: 14, background: G.green, color: "#fff", border: "none", borderRadius: 12, fontWeight: 700, fontSize: 15, cursor: "pointer" }} onClick={enviar} disabled={loading}>
-          {loading ? "Enviando..." : "Enviar solicitud →"}
+        {error && <div style={{color:G.red,fontSize:12,margin:"8px 0"}}>{error}</div>}
+        <button style={{width:"100%",padding:12,background:G.green,color:"#fff",border:"none",borderRadius:10,fontWeight:700,fontSize:13,cursor:"pointer",marginTop:10}} onClick={enviar} disabled={loading}>
+          {loading?"Enviando...":"Enviar solicitud →"}
         </button>
       </div>
     </div>
   );
 }
 
-// ── Registro con verificación ─────────────────────────────────────────────────
-function Registrar({ onSuccess }) {
-  const [paso, setPaso] = useState(1); // 1=datos, 2=verificación, 3=referencias
-  const [form, setForm] = useState({
-    nombre: "", email: "", telefono: "", especialidad: ESPECIALIDADES[0],
-    zona: ZONAS[0], turno: TURNOS[0], tarifa: 150, experiencia: "1 año",
-    descripcion: "", tags: "",
-  });
-  const [fotos, setFotos] = useState({ perfil: null, selfie_ine: null });
-  const [previews, setPreviews] = useState({ perfil: null, selfie_ine: null });
-  const [referencias, setReferencias] = useState([{ nombre: "", telefono: "", relacion: "" }]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [aceptaAviso, setAceptaAviso] = useState(false);
-  const fotoRef = useRef(); const selfieRef = useRef();
+function Registrar({onSuccess,setVista}) {
+  const [paso,setPaso] = useState(1);
+  const [form,setForm] = useState({nombre:"",email:"",telefono:"",especialidad:"Doméstica",municipio:TODOS_MUNICIPIOS[0],zona_metro:"ZMM Norte",turno:TURNOS[0],jornada:JORNADAS[0],tarifa:500,tipoTarifa:"Por día",experiencia:"1 año",descripcion:""});
+  const [tiposTrabajo,setTiposTrabajo] = useState([]);
+  const [tiposInmueble,setTiposInmueble] = useState([]);
+  const [edadesNinos,setEdadesNinos] = useState([]);
+  const [serviciosEspeciales,setServiciosEspeciales] = useState([]);
+  const [previews,setPreviews] = useState({perfil:null,selfie_ine:null});
+  const [referencias,setReferencias] = useState([{nombre:"",telefono:"",relacion:""}]);
+  const [aceptaAviso,setAceptaAviso] = useState(false);
+  const [loading,setLoading] = useState(false);
+  const [error,setError] = useState(null);
+  const fotoRef=useRef(); const selfieRef=useRef();
 
-  const handleFoto = (key, file) => {
-    if (!file) return;
-    setFotos(f => ({ ...f, [key]: file }));
-    const reader = new FileReader();
-    reader.onload = e => setPreviews(p => ({ ...p, [key]: e.target.result }));
-    reader.readAsDataURL(file);
-  };
-
-  const addRef = () => setReferencias(r => [...r, { nombre: "", telefono: "", relacion: "" }]);
-  const removeRef = (i) => setReferencias(r => r.filter((_, j) => j !== i));
-  const updateRef = (i, key, val) => setReferencias(r => r.map((x, j) => j === i ? { ...x, [key]: val } : x));
+  const toggle = (arr,setArr,val) => setArr(p=>p.includes(val)?p.filter(x=>x!==val):[...p,val]);
+  const handleFoto = (key,file) => { if(!file)return; const r=new FileReader(); r.onload=e=>setPreviews(p=>({...p,[key]:e.target.result})); r.readAsDataURL(file); };
 
   const registrar = async () => {
-    if (!form.nombre || !form.email) { setError("Nombre y email son requeridos."); return; }
-    if (!aceptaAviso) { setError("Debes aceptar el Aviso de Privacidad para continuar."); return; }
-    setLoading(true); setError(null);
+    if(!form.nombre||!form.email){setError("Nombre y email requeridos.");return;}
+    if(!aceptaAviso){setError("Debes aceptar el Aviso de Privacidad.");return;}
+    setLoading(true);setError(null);
     try {
-      const refsValidas = referencias.filter(r => r.nombre && r.telefono);
-      await db.post("trabajadores", {
-        ...form,
-        tarifa: parseInt(form.tarifa) || 100,
-        tags: form.tags ? form.tags.split(",").map(t => t.trim()).filter(Boolean) : [],
-        referencias: refsValidas,
-        foto_url: previews.perfil || null,
-        selfie_ine_url: previews.selfie_ine || null,
-        verificado: false,
-        rating: 5.0, reviews: 0, premium: false, activo: true,
-      });
+      await db.post("trabajadores",{...form,tarifa:parseInt(form.tarifa)||100,tipo_tarifa:form.tipoTarifa||'Por día',tipo_trabajo:tiposTrabajo,tipo_inmueble:tiposInmueble,edades_ninos:edadesNinos,servicios_especiales:serviciosEspeciales,tags:tiposTrabajo.slice(0,3),referencias:referencias.filter(r=>r.nombre&&r.telefono),foto_url:previews.perfil||null,selfie_ine_url:previews.selfie_ine||null,verificado:false,rating:5.0,reviews:0,premium:false,activo:true});
       onSuccess(form.nombre);
-    } catch (e) {
-      const msg = e.message?.includes("unique") ? "Ese email ya está registrado." : "Error al registrar. Intenta de nuevo.";
-      setError(msg);
-    }
+    } catch(e) { setError(e.message?.includes("unique")?"Ese email ya está registrado.":"Error al registrar."); }
     finally { setLoading(false); }
   };
 
-  const inputStyle = { width: "100%", padding: "11px 14px", border: `1.5px solid ${G.border}`, borderRadius: 10, fontSize: 14, outline: "none", background: G.white };
-  const labelStyle = { display: "block", fontSize: 12, fontWeight: 600, color: G.muted, marginBottom: 6, textTransform: "uppercase", letterSpacing: .5 };
-  const groupStyle = { marginBottom: 16 };
+  const inp = {width:"100%",padding:"10px 12px",border:`1.5px solid ${G.border}`,borderRadius:8,fontSize:13,outline:"none",background:G.white};
+  const lbl = {display:"block",fontSize:10,fontWeight:700,color:G.muted,marginBottom:5,textTransform:"uppercase",letterSpacing:.5};
+  const Chip = ({val,active,onClick}) => <button onClick={onClick} style={{padding:"5px 11px",borderRadius:20,border:`1.5px solid ${active?G.green:G.border}`,background:active?G.greenPale:G.white,color:active?G.greenDark:G.muted,fontSize:11,cursor:"pointer",fontWeight:active?600:400,transition:"all .15s"}}>{val}</button>;
 
   return (
-    <div style={{ maxWidth: 680, margin: "0 auto", padding: "32px 24px 64px" }}>
-      <h1 style={{ fontSize: 26, fontWeight: 800, marginBottom: 4 }}>Crear tu perfil</h1>
-      <p style={{ color: G.muted, fontSize: 14, marginBottom: 32 }}>Completa los 3 pasos para aparecer en el directorio</p>
-
-      {/* Stepper */}
-      <div style={{ display: "flex", alignItems: "center", marginBottom: 36 }}>
-        {[
-          { n: 1, l: "Datos básicos" },
-          { n: 2, l: "Verificación" },
-          { n: 3, l: "Referencias" },
-        ].map(({ n, l }, i) => (
-          <div key={n} style={{ display: "flex", alignItems: "center", flex: i < 2 ? 1 : 0 }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-              <div style={{ width: 36, height: 36, borderRadius: "50%", background: paso >= n ? G.green : G.border, color: paso >= n ? "#fff" : G.muted, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, transition: "all .3s" }}>
-                {paso > n ? "✓" : n}
-              </div>
-              <span style={{ fontSize: 11, fontWeight: 600, color: paso >= n ? G.green : G.muted, whiteSpace: "nowrap" }}>{l}</span>
+    <div style={{maxWidth:660,margin:"0 auto",padding:"24px 24px 64px"}}>
+      <h1 style={{fontSize:22,fontWeight:800,marginBottom:4}}>Crea tu perfil gratis</h1>
+      <p style={{color:G.muted,fontSize:12,marginBottom:24}}>Para todo Nuevo León · 3 pasos rápidos</p>
+      <div style={{display:"flex",alignItems:"center",marginBottom:28}}>
+        {[{n:1,l:"Datos y servicios"},{n:2,l:"Verificación"},{n:3,l:"Referencias"}].map(({n,l},i)=>(
+          <div key={n} style={{display:"flex",alignItems:"center",flex:i<2?1:0}}>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+              <div style={{width:32,height:32,borderRadius:"50%",background:paso>=n?G.green:G.border,color:paso>=n?"#fff":G.muted,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:12,transition:"all .3s"}}>{paso>n?"✓":n}</div>
+              <span style={{fontSize:9,fontWeight:600,color:paso>=n?G.green:G.muted,whiteSpace:"nowrap"}}>{l}</span>
             </div>
-            {i < 2 && <div style={{ flex: 1, height: 2, background: paso > n ? G.green : G.border, margin: "0 8px", marginBottom: 20, transition: "all .3s" }} />}
+            {i<2 && <div style={{flex:1,height:2,background:paso>n?G.green:G.border,margin:"0 5px",marginBottom:16,transition:"all .3s"}}/>}
           </div>
         ))}
       </div>
 
-      <div style={{ background: G.white, border: `1.5px solid ${G.border}`, borderRadius: 20, padding: 32 }}>
-
-        {/* PASO 1: Datos */}
-        {paso === 1 && (
-          <div className="fade-up">
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>📋 Información básica</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-              <div style={{ ...groupStyle, gridColumn: "1/-1" }}>
-                <label style={labelStyle}>Nombre completo *</label>
-                <input style={inputStyle} type="text" value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))} placeholder="Tu nombre completo" />
-              </div>
-              <div style={groupStyle}>
-                <label style={labelStyle}>Email *</label>
-                <input style={inputStyle} type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="tu@email.com" />
-              </div>
-              <div style={groupStyle}>
-                <label style={labelStyle}>Teléfono</label>
-                <input style={inputStyle} type="tel" value={form.telefono} onChange={e => setForm(f => ({ ...f, telefono: e.target.value }))} placeholder="55 1234 5678" />
-              </div>
-              <div style={groupStyle}>
-                <label style={labelStyle}>Especialidad</label>
-                <select style={inputStyle} value={form.especialidad} onChange={e => setForm(f => ({ ...f, especialidad: e.target.value }))}>
-                  {ESPECIALIDADES.map(o => <option key={o}>{o}</option>)}
+      <div style={{background:G.white,border:`1.5px solid ${G.border}`,borderRadius:20,padding:26}}>
+        {paso===1 && (
+          <div className="fu">
+            <h2 style={{fontSize:16,fontWeight:700,marginBottom:18}}>📋 Datos personales y servicios</h2>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              <div style={{gridColumn:"1/-1"}}><label style={lbl}>Nombre completo *</label><input style={inp} value={form.nombre} onChange={e=>setForm(f=>({...f,nombre:e.target.value}))} placeholder="Tu nombre completo"/></div>
+              <div><label style={lbl}>Email *</label><input style={inp} type="email" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))}/></div>
+              <div><label style={lbl}>Teléfono</label><input style={inp} type="tel" value={form.telefono} onChange={e=>setForm(f=>({...f,telefono:e.target.value}))} placeholder="81 XXXX XXXX"/></div>
+              <div><label style={lbl}>Región / Zona</label>
+                <select style={inp} value={form.zona_metro} onChange={e=>setForm(f=>({...f,zona_metro:e.target.value,municipio:ZONAS_NL[e.target.value][0]}))}>
+                  {Object.keys(ZONAS_NL).map(z=><option key={z}>{z}</option>)}
                 </select>
               </div>
-              <div style={groupStyle}>
-                <label style={labelStyle}>Zona</label>
-                <select style={inputStyle} value={form.zona} onChange={e => setForm(f => ({ ...f, zona: e.target.value }))}>
-                  {ZONAS.map(o => <option key={o}>{o}</option>)}
+              <div><label style={lbl}>Municipio / Colonia</label>
+                <select style={inp} value={form.municipio} onChange={e=>setForm(f=>({...f,municipio:e.target.value}))}>
+                  {(ZONAS_NL[form.zona_metro]||[]).map(m=><option key={m}>{m}</option>)}
                 </select>
               </div>
-              <div style={groupStyle}>
-                <label style={labelStyle}>Turno disponible</label>
-                <select style={inputStyle} value={form.turno} onChange={e => setForm(f => ({ ...f, turno: e.target.value }))}>
-                  {TURNOS.map(o => <option key={o}>{o}</option>)}
+              <div><label style={lbl}>Jornada disponible</label>
+                <select style={inp} value={form.jornada} onChange={e=>setForm(f=>({...f,jornada:e.target.value}))}>
+                  {JORNADAS.map(j=><option key={j}>{j}</option>)}
                 </select>
               </div>
-              <div style={groupStyle}>
-                <label style={labelStyle}>Tarifa por hora (MXN)</label>
-                <input style={inputStyle} type="number" min={50} max={1000} value={form.tarifa} onChange={e => setForm(f => ({ ...f, tarifa: e.target.value }))} />
+              <div><label style={lbl}>Turno</label>
+                <select style={inp} value={form.turno} onChange={e=>setForm(f=>({...f,turno:e.target.value}))}>
+                  {TURNOS.map(t=><option key={t}>{t}</option>)}
+                </select>
               </div>
-              <div style={groupStyle}>
-                <label style={labelStyle}>Años de experiencia</label>
-                <input style={inputStyle} type="text" value={form.experiencia} onChange={e => setForm(f => ({ ...f, experiencia: e.target.value }))} placeholder="Ej: 3 años" />
-              </div>
-              <div style={{ ...groupStyle, gridColumn: "1/-1" }}>
-                <label style={labelStyle}>Especialidades (separadas por coma)</label>
-                <input style={inputStyle} value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} placeholder="Ej: Casas, Vidrios, Cocinas, Planchado" />
-              </div>
-              <div style={{ ...groupStyle, gridColumn: "1/-1" }}>
-                <label style={labelStyle}>Descripción breve</label>
-                <textarea style={{ ...inputStyle, minHeight: 90, resize: "vertical" }} value={form.descripcion} onChange={e => setForm(f => ({ ...f, descripcion: e.target.value }))} placeholder="Cuéntanos sobre tu experiencia, habilidades y lo que te diferencia..." />
-              </div>
-            </div>
-            <button style={{ width: "100%", padding: 14, background: G.green, color: "#fff", border: "none", borderRadius: 12, fontWeight: 700, fontSize: 15, cursor: "pointer", marginTop: 8 }} onClick={() => { if (!form.nombre || !form.email) { setError("Nombre y email son requeridos."); return; } setError(null); setPaso(2); }}>
-              Continuar →
-            </button>
-            {error && <div style={{ color: G.red, fontSize: 13, marginTop: 12, textAlign: "center" }}>{error}</div>}
-          </div>
-        )}
-
-        {/* PASO 2: Verificación */}
-        {paso === 2 && (
-          <div className="fade-up">
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>🛡️ Verificación de identidad</h2>
-            <p style={{ color: G.muted, fontSize: 14, marginBottom: 24, lineHeight: 1.6 }}>
-              Para garantizar la seguridad de nuestra comunidad, necesitamos verificar tu identidad. Tus documentos son confidenciales.
-            </p>
-
-            {/* Foto de perfil */}
-            <div style={{ ...groupStyle, marginBottom: 24 }}>
-              <label style={labelStyle}>Foto de perfil</label>
-              <div style={{ border: `2px dashed ${previews.perfil ? G.green : G.border}`, borderRadius: 12, padding: 24, textAlign: "center", cursor: "pointer", transition: "all .2s", background: previews.perfil ? G.greenPale : G.bg }} onClick={() => fotoRef.current?.click()}>
-                {previews.perfil ? (
-                  <div>
-                    <img src={previews.perfil} alt="perfil" style={{ width: 100, height: 100, borderRadius: "50%", objectFit: "cover", margin: "0 auto 8px", display: "block", border: `3px solid ${G.green}` }} />
-                    <span style={{ fontSize: 13, color: G.green, fontWeight: 600 }}>✓ Foto cargada — click para cambiar</span>
-                  </div>
-                ) : (
-                  <div>
-                    <div style={{ fontSize: 40, marginBottom: 8 }}>📷</div>
-                    <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>Sube tu foto de perfil</div>
-                    <div style={{ fontSize: 12, color: G.muted }}>Foto clara de tu rostro, buena iluminación</div>
-                  </div>
-                )}
-                <input ref={fotoRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => handleFoto("perfil", e.target.files[0])} />
-              </div>
-            </div>
-
-            {/* Selfie con INE */}
-            <div style={{ ...groupStyle, marginBottom: 24 }}>
-              <label style={labelStyle}>Selfie con identificación oficial (INE)</label>
-              <div style={{ background: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: 10, padding: 12, marginBottom: 12 }}>
-                <div style={{ fontSize: 13, color: "#92400E", fontWeight: 600, marginBottom: 4 }}>📸 Instrucciones importantes:</div>
-                <ul style={{ fontSize: 12, color: "#92400E", lineHeight: 1.8, paddingLeft: 16 }}>
-                  <li>Sostén tu INE junto a tu rostro en la misma foto</li>
-                  <li>Asegúrate que los datos de la INE sean legibles</li>
-                  <li>Buena iluminación, sin filtros ni edición</li>
-                  <li>La foto es solo para verificación interna</li>
-                </ul>
-              </div>
-              <div style={{ border: `2px dashed ${previews.selfie_ine ? G.green : G.border}`, borderRadius: 12, padding: 24, textAlign: "center", cursor: "pointer", transition: "all .2s", background: previews.selfie_ine ? G.greenPale : G.bg }} onClick={() => selfieRef.current?.click()}>
-                {previews.selfie_ine ? (
-                  <div>
-                    <img src={previews.selfie_ine} alt="selfie ine" style={{ width: 160, height: 110, objectFit: "cover", borderRadius: 10, margin: "0 auto 8px", display: "block", border: `3px solid ${G.green}` }} />
-                    <span style={{ fontSize: 13, color: G.green, fontWeight: 600 }}>✓ Selfie cargada — click para cambiar</span>
-                  </div>
-                ) : (
-                  <div>
-                    <div style={{ fontSize: 40, marginBottom: 8 }}>🤳</div>
-                    <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>Sube tu selfie con INE</div>
-                    <div style={{ fontSize: 12, color: G.muted }}>Tú en la foto sosteniendo tu credencial</div>
-                  </div>
-                )}
-                <input ref={selfieRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => handleFoto("selfie_ine", e.target.files[0])} />
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: 10 }}>
-              <button style={{ flex: 1, padding: 14, background: G.bg, color: G.text, border: `1.5px solid ${G.border}`, borderRadius: 12, fontWeight: 700, fontSize: 15, cursor: "pointer" }} onClick={() => setPaso(1)}>
-                ← Atrás
-              </button>
-              <button style={{ flex: 2, padding: 14, background: G.green, color: "#fff", border: "none", borderRadius: 12, fontWeight: 700, fontSize: 15, cursor: "pointer" }} onClick={() => setPaso(3)}>
-                Continuar →
-              </button>
-            </div>
-            <p style={{ fontSize: 11, color: G.muted, textAlign: "center", marginTop: 12 }}>
-              Puedes continuar sin subir fotos — tu perfil será verificado después
-            </p>
-          </div>
-        )}
-
-        {/* PASO 3: Referencias */}
-        {paso === 3 && (
-          <div className="fade-up">
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>📞 Referencias laborales</h2>
-            <p style={{ color: G.muted, fontSize: 14, marginBottom: 24, lineHeight: 1.6 }}>
-              Agrega al menos una referencia de empleadores anteriores. Esto aumenta tu confianza y la probabilidad de ser contratado.
-            </p>
-
-            {referencias.map((r, i) => (
-              <div key={i} style={{ background: G.bg, border: `1.5px solid ${G.border}`, borderRadius: 12, padding: 20, marginBottom: 16 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: G.green }}>Referencia {i + 1}</div>
-                  {referencias.length > 1 && (
-                    <button onClick={() => removeRef(i)} style={{ background: "none", border: "none", color: G.red, cursor: "pointer", fontSize: 18 }}>✕</button>
-                  )}
+              <div><label style={lbl}>Tarifa (MXN)</label>
+                <div style={{display:"flex",gap:6}}>
+                  <input style={{...inp,width:"50%"}} type="number" min={50} max={10000} value={form.tarifa} onChange={e=>setForm(f=>({...f,tarifa:e.target.value}))} placeholder="500"/>
+                  <select style={{...inp,width:"50%"}} value={form.tipoTarifa||"Por día"} onChange={e=>setForm(f=>({...f,tipoTarifa:e.target.value}))}>
+                    {TIPO_TARIFA.map(t=><option key={t}>{t}</option>)}
+                  </select>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <div>
-                    <label style={labelStyle}>Nombre completo</label>
-                    <input style={inputStyle} placeholder="Nombre de quien te recomienda" value={r.nombre} onChange={e => updateRef(i, "nombre", e.target.value)} />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>Teléfono de contacto</label>
-                    <input style={inputStyle} placeholder="55 1234 5678" value={r.telefono} onChange={e => updateRef(i, "telefono", e.target.value)} />
-                  </div>
-                  <div style={{ gridColumn: "1/-1" }}>
-                    <label style={labelStyle}>Relación / empresa</label>
-                    <input style={inputStyle} placeholder="Ej: Empleador anterior, Empresa ABC" value={r.relacion} onChange={e => updateRef(i, "relacion", e.target.value)} />
-                  </div>
+              </div>
+              <div><label style={lbl}>Años de experiencia</label><input style={inp} value={form.experiencia} onChange={e=>setForm(f=>({...f,experiencia:e.target.value}))} placeholder="Ej: 3 años"/></div>
+            </div>
+            <div style={{marginTop:16}}><label style={lbl}>Tipos de trabajo que ofreces</label><div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:4}}>{TIPOS_TRABAJO.map(t=><Chip key={t} val={t} active={tiposTrabajo.includes(t)} onClick={()=>toggle(tiposTrabajo,setTiposTrabajo,t)}/>)}</div></div>
+            <div style={{marginTop:14}}><label style={lbl}>Experiencia en tipo de inmueble</label><div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:4}}>{TIPOS_INMUEBLE.map(t=><Chip key={t} val={t} active={tiposInmueble.includes(t)} onClick={()=>toggle(tiposInmueble,setTiposInmueble,t)}/>)}</div></div>
+            {(tiposTrabajo.includes("Cuidadora de niños")) && (
+              <div style={{marginTop:14}}>
+                <label style={lbl}>Edades de niños con quienes tienes experiencia</label>
+                <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:4}}>
+                  {EDADES_NINOS.map(e=>{
+                    const active=(edadesNinos||[]).includes(e);
+                    return <button key={e} onClick={()=>setEdadesNinos(p=>active?p.filter(x=>x!==e):[...p,e])} style={{padding:"5px 11px",borderRadius:20,border:`1.5px solid ${active?"#F97316":"#E5E7EB"}`,background:active?"#FFF7ED":"#fff",color:active?"#C2410C":"#6B7280",fontSize:11,cursor:"pointer",fontWeight:active?600:400}}>{e}</button>
+                  })}
+                </div>
+              </div>
+            )}
+            <div style={{marginTop:14}}>
+              <label style={lbl}>Servicios especiales que ofreces</label>
+              <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:4}}>
+                {SERVICIOS_ESPECIALES.map(s=>{
+                  const active=(serviciosEspeciales||[]).includes(s);
+                  return <button key={s} onClick={()=>setServiciosEspeciales(p=>active?p.filter(x=>x!==s):[...p,s])} style={{padding:"5px 11px",borderRadius:20,border:`1.5px solid ${active?G.green:"#E5E7EB"}`,background:active?G.greenPale:"#fff",color:active?G.greenDark:"#6B7280",fontSize:11,cursor:"pointer",fontWeight:active?600:400}}>{s}</button>
+                })}
+              </div>
+            </div>
+            <div style={{marginTop:14}}><label style={lbl}>Descripción breve</label><textarea style={{...inp,minHeight:75,resize:"vertical"}} value={form.descripcion} onChange={e=>setForm(f=>({...f,descripcion:e.target.value}))} placeholder="Cuéntanos sobre tu experiencia, zonas donde trabajas..."/></div>
+            {error && <div style={{color:G.red,fontSize:12,marginTop:8}}>{error}</div>}
+            <button style={{width:"100%",padding:12,background:G.green,color:"#fff",border:"none",borderRadius:10,fontWeight:700,fontSize:13,cursor:"pointer",marginTop:18}} onClick={()=>{if(!form.nombre||!form.email){setError("Nombre y email requeridos.");return;}setError(null);setPaso(2);}}>Continuar →</button>
+          </div>
+        )}
+
+        {paso===2 && (
+          <div className="fu">
+            <h2 style={{fontSize:16,fontWeight:700,marginBottom:8}}>🛡️ Verificación de identidad</h2>
+            <p style={{color:G.muted,fontSize:12,lineHeight:1.6,marginBottom:18}}>Tus documentos son confidenciales y solo se usan para verificar tu identidad.</p>
+            {[{key:"perfil",ref:fotoRef,icon:"📷",title:"Foto de perfil",desc:"Foto clara de tu rostro, sin filtros"},{key:"selfie_ine",ref:selfieRef,icon:"🤳",title:"Selfie con INE",desc:"Tú sosteniendo tu credencial en la misma foto"}].map(({key,ref,icon,title,desc})=>(
+              <div key={key} style={{marginBottom:16}}>
+                <label style={lbl}>{title}</label>
+                {key==="selfie_ine" && <div style={{background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:8,padding:9,marginBottom:8,fontSize:11,color:"#92400E"}}>⚠️ Foto tuya sosteniendo tu INE · Datos visibles · Sin filtros · Solo para verificación</div>}
+                <div style={{border:`2px dashed ${previews[key]?G.green:G.border}`,borderRadius:12,padding:18,textAlign:"center",cursor:"pointer",background:previews[key]?G.greenPale:G.bg}} onClick={()=>ref.current?.click()}>
+                  {previews[key] ? <div><img src={previews[key]} alt={title} style={{width:key==="perfil"?80:140,height:key==="perfil"?80:95,borderRadius:key==="perfil"?"50%":10,objectFit:"cover",margin:"0 auto 6px",display:"block",border:`3px solid ${G.green}`}}/><span style={{fontSize:11,color:G.green,fontWeight:600}}>✓ Cargada — click para cambiar</span></div>
+                  : <div><div style={{fontSize:32,marginBottom:5}}>{icon}</div><div style={{fontWeight:600,fontSize:12,marginBottom:2}}>{title}</div><div style={{fontSize:11,color:G.muted}}>{desc}</div></div>}
+                  <input ref={ref} type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleFoto(key,e.target.files[0])}/>
                 </div>
               </div>
             ))}
+            <div style={{display:"flex",gap:8}}>
+              <button style={{flex:1,padding:11,background:G.bg,color:G.text,border:`1.5px solid ${G.border}`,borderRadius:10,fontWeight:700,fontSize:12,cursor:"pointer"}} onClick={()=>setPaso(1)}>← Atrás</button>
+              <button style={{flex:2,padding:11,background:G.green,color:"#fff",border:"none",borderRadius:10,fontWeight:700,fontSize:12,cursor:"pointer"}} onClick={()=>setPaso(3)}>Continuar →</button>
+            </div>
+            <p style={{fontSize:10,color:G.muted,textAlign:"center",marginTop:8}}>Puedes continuar sin fotos — se verificará después</p>
+          </div>
+        )}
 
-            {referencias.length < 3 && (
-              <button onClick={addRef} style={{ width: "100%", padding: 12, background: "transparent", border: `2px dashed ${G.border}`, borderRadius: 10, color: G.muted, fontWeight: 600, fontSize: 14, cursor: "pointer", marginBottom: 20 }}>
-                + Agregar otra referencia
-              </button>
-            )}
-
-            {error && <div style={{ color: G.red, fontSize: 13, marginBottom: 12, textAlign: "center" }}>{error}</div>}
-
-            {/* Casilla de aceptación del Aviso de Privacidad */}
-            <div style={{ background: aceptaAviso ? G.greenPale : "#FFFBEB", border: `1.5px solid ${aceptaAviso ? G.green : "#FCD34D"}`, borderRadius: 12, padding: 16, marginBottom: 16 }}>
-              <label style={{ display: "flex", alignItems: "flex-start", gap: 12, cursor: "pointer" }}>
-                <input
-                  type="checkbox"
-                  checked={aceptaAviso}
-                  onChange={e => setAceptaAviso(e.target.checked)}
-                  style={{ width: 20, height: 20, marginTop: 1, accentColor: G.green, flexShrink: 0, cursor: "pointer" }}
-                />
-                <span style={{ fontSize: 13, color: G.text, lineHeight: 1.6 }}>
-                  He leído y acepto el{" "}
-<span style={{ color: G.green, fontWeight: 700, textDecoration: "underline", cursor: "pointer" }} onClick={() => window.open("#aviso", "_blank")}>
-                    Aviso de Privacidad
-                  </span>{" "}
-                  de CleanForce. Entiendo que mis datos personales, incluyendo fotografía e identificación oficial, serán tratados conforme a dicho aviso y la{" "}
-                  <strong>Ley Federal de Protección de Datos Personales en Posesión de Particulares (LFPDPPP)</strong>.
-                </span>
+        {paso===3 && (
+          <div className="fu">
+            <h2 style={{fontSize:16,fontWeight:700,marginBottom:8}}>📞 Referencias laborales</h2>
+            <p style={{color:G.muted,fontSize:12,lineHeight:1.6,marginBottom:16}}>Agrega referencias de empleadores anteriores para aumentar tu confianza.</p>
+            {referencias.map((r,i)=>(
+              <div key={i} style={{background:G.bg,border:`1.5px solid ${G.border}`,borderRadius:12,padding:14,marginBottom:10}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+                  <div style={{fontWeight:700,fontSize:12,color:G.green}}>Referencia {i+1}</div>
+                  {referencias.length>1 && <button onClick={()=>setReferencias(p=>p.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:G.red,cursor:"pointer",fontSize:15}}>✕</button>}
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                  <div><label style={lbl}>Nombre</label><input style={inp} placeholder="Quien te recomienda" value={r.nombre} onChange={e=>setReferencias(p=>p.map((x,j)=>j===i?{...x,nombre:e.target.value}:x))}/></div>
+                  <div><label style={lbl}>Teléfono</label><input style={inp} placeholder="81 XXXX XXXX" value={r.telefono} onChange={e=>setReferencias(p=>p.map((x,j)=>j===i?{...x,telefono:e.target.value}:x))}/></div>
+                  <div style={{gridColumn:"1/-1"}}><label style={lbl}>Empresa o relación</label><input style={inp} placeholder="Familia García, Empresa ABC..." value={r.relacion} onChange={e=>setReferencias(p=>p.map((x,j)=>j===i?{...x,relacion:e.target.value}:x))}/></div>
+                </div>
+              </div>
+            ))}
+            {referencias.length<3 && <button onClick={()=>setReferencias(p=>[...p,{nombre:"",telefono:"",relacion:""}])} style={{width:"100%",padding:9,background:"transparent",border:`2px dashed ${G.border}`,borderRadius:10,color:G.muted,fontWeight:600,fontSize:12,cursor:"pointer",marginBottom:14}}>+ Agregar referencia</button>}
+            <div style={{background:aceptaAviso?G.greenPale:"#FFFBEB",border:`1.5px solid ${aceptaAviso?G.green:"#FCD34D"}`,borderRadius:12,padding:12,marginBottom:14}}>
+              <label style={{display:"flex",alignItems:"flex-start",gap:8,cursor:"pointer"}}>
+                <input type="checkbox" checked={aceptaAviso} onChange={e=>setAceptaAviso(e.target.checked)} style={{width:17,height:17,marginTop:2,accentColor:G.green,flexShrink:0,cursor:"pointer"}}/>
+                <span style={{fontSize:11,color:G.text,lineHeight:1.6}}>He leído y acepto el <span onClick={()=>setVista("aviso")} style={{color:G.green,fontWeight:700,cursor:"pointer",textDecoration:"underline"}}>Aviso de Privacidad</span>. Mis datos incluyendo INE serán tratados conforme a la <strong>LFPDPPP</strong>.</span>
               </label>
             </div>
-
-            <div style={{ display: "flex", gap: 10 }}>
-              <button style={{ flex: 1, padding: 14, background: G.bg, color: G.text, border: `1.5px solid ${G.border}`, borderRadius: 12, fontWeight: 700, fontSize: 15, cursor: "pointer" }} onClick={() => setPaso(2)}>
-                ← Atrás
-              </button>
-              <button style={{ flex: 2, padding: 14, background: aceptaAviso ? G.green : "#9CA3AF", color: "#fff", border: "none", borderRadius: 12, fontWeight: 700, fontSize: 15, cursor: aceptaAviso ? "pointer" : "not-allowed", opacity: loading ? .7 : 1, transition: "background .2s" }} onClick={registrar} disabled={loading || !aceptaAviso}>
-                {loading ? "Creando perfil..." : "🎉 Crear mi perfil gratis"}
+            {error && <div style={{color:G.red,fontSize:12,marginBottom:8,textAlign:"center"}}>{error}</div>}
+            <div style={{display:"flex",gap:8}}>
+              <button style={{flex:1,padding:11,background:G.bg,color:G.text,border:`1.5px solid ${G.border}`,borderRadius:10,fontWeight:700,fontSize:12,cursor:"pointer"}} onClick={()=>setPaso(2)}>← Atrás</button>
+              <button style={{flex:2,padding:11,background:aceptaAviso?G.green:"#9CA3AF",color:"#fff",border:"none",borderRadius:10,fontWeight:700,fontSize:12,cursor:aceptaAviso?"pointer":"not-allowed",opacity:loading?.7:1}} onClick={registrar} disabled={loading||!aceptaAviso}>
+                {loading?"Creando perfil...":"🎉 Crear mi perfil gratis"}
               </button>
             </div>
-            <p style={{ fontSize: 11, color: G.muted, textAlign: "center", marginTop: 12 }}>
-              Tus datos están protegidos · privacidad@cleanforce.com.mx
-            </p>
+            <p style={{fontSize:10,color:G.muted,textAlign:"center",marginTop:8}}>Tus datos están protegidos · privacidad@cleanforce.com.mx</p>
           </div>
         )}
       </div>
@@ -780,93 +635,36 @@ function Registrar({ onSuccess }) {
   );
 }
 
-// ── Aviso de Privacidad ───────────────────────────────────────────────────────
-function AvisoPrivacidad({ onBack }) {
-  const wrap = { maxWidth: 800, margin: "0 auto", padding: "32px 24px 64px" };
-  const card = { background: "#fff", border: "1px solid #E5E7EB", borderRadius: 20, padding: "40px 48px" };
-  const sh2 = { fontSize: 16, fontWeight: 700, color: "#111827", margin: "28px 0 8px", paddingBottom: 6, borderBottom: "2px solid #DCFCE7" };
-  const sp = { fontSize: 14, color: "#374151", lineHeight: 1.8, marginBottom: 10 };
-  const sli = { fontSize: 14, color: "#374151", lineHeight: 2, marginLeft: 20 };
-
+function AvisoPrivacidad({onBack}) {
+  const sp = {fontSize:14,color:"#374151",lineHeight:1.8,marginBottom:10};
+  const sh2 = {fontSize:15,fontWeight:700,color:"#111827",margin:"24px 0 8px",paddingBottom:5,borderBottom:"2px solid #DCFCE7"};
+  const sli = {fontSize:13,color:"#374151",lineHeight:2,marginLeft:18};
   return (
-    <div style={wrap}>
-      <button onClick={onBack} style={{ display:"flex", alignItems:"center", gap:6, background:"none", border:"none", color:"#6B7280", cursor:"pointer", fontSize:14, fontWeight:600, marginBottom:24 }}>
-        ← Volver al inicio
-      </button>
-      <div style={card}>
-        <div style={{ display:"inline-block", background:"#DCFCE7", color:"#15803D", fontSize:11, fontWeight:700, padding:"3px 12px", borderRadius:20, marginBottom:20 }}>
-          Documento legal vigente
-        </div>
-        <h1 style={{ fontSize:28, fontWeight:800, color:"#16A34A", marginBottom:4 }}>Aviso de Privacidad</h1>
-        <p style={{ ...sp, color:"#6B7280", marginBottom:28 }}>
-          Última actualización: {new Date().toLocaleDateString("es-MX", { day:"numeric", month:"long", year:"numeric" })}
-        </p>
-
+    <div style={{maxWidth:780,margin:"0 auto",padding:"28px 24px 64px"}}>
+      <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",color:G.muted,cursor:"pointer",fontSize:13,fontWeight:600,marginBottom:20}}>← Volver al inicio</button>
+      <div style={{background:"#fff",border:`1px solid ${G.border}`,borderRadius:20,padding:"36px 44px"}}>
+        <div style={{display:"inline-block",background:"#DCFCE7",color:"#15803D",fontSize:11,fontWeight:700,padding:"3px 12px",borderRadius:20,marginBottom:18}}>Documento legal vigente</div>
+        <h1 style={{fontSize:26,fontWeight:800,color:"#16A34A",marginBottom:4}}>Aviso de Privacidad</h1>
+        <p style={{...sp,color:"#6B7280",marginBottom:24}}>Última actualización: {new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"})}</p>
         <h2 style={sh2}>I. Identidad del Responsable</h2>
-        <p style={sp}>
-          <strong>CleanForce Marketplace</strong> es responsable del tratamiento de tus datos personales.
-          Domicilio: Monterrey, Nuevo León, México.
-          Contacto: <a href="mailto:privacidad@cleanforce.com.mx" style={{ color:"#16A34A" }}>privacidad@cleanforce.com.mx</a>
-        </p>
-
-        <h2 style={sh2}>II. Datos personales que recabamos</h2>
-        <p style={sp}><strong>Trabajadores:</strong></p>
-        <ul>
-          <li style={sli}>Nombre completo, correo electrónico y teléfono</li>
-          <li style={sli}>Especialidad, zona, turno, tarifa y experiencia</li>
-          <li style={sli}>Fotografía de perfil</li>
-          <li style={sli}>Selfie con identificación oficial (INE/IFE) — dato sensible</li>
-          <li style={sli}>Referencias laborales: nombre, teléfono y relación</li>
-        </ul>
-        <p style={{ ...sp, marginTop:10 }}><strong>Empleadores:</strong> nombre o empresa, correo electrónico y teléfono al enviar una solicitud.</p>
-
-        <h2 style={sh2}>III. Finalidades del tratamiento</h2>
-        <p style={sp}><strong>Primarias:</strong> crear y gestionar tu perfil público, verificar tu identidad, facilitar el contacto entre trabajadores y empleadores, gestionar solicitudes y mostrar calificaciones.</p>
-        <p style={sp}><strong>Secundarias (puedes oponerte):</strong> notificaciones de nuevas solicitudes, comunicaciones de mejoras y análisis estadísticos anónimos. Para oponerte escríbenos a privacidad@cleanforce.com.mx</p>
-
-        <h2 style={sh2}>IV. Transferencias de datos</h2>
-        <p style={sp}>Compartimos tus datos únicamente con proveedores tecnológicos necesarios para operar la plataforma:</p>
-        <div style={{ background:"#F0FDF4", border:"1px solid #DCFCE7", borderRadius:10, padding:"14px 18px", marginBottom:12 }}>
-          <div style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom:"1px solid #DCFCE7", fontSize:13 }}>
-            <strong>Supabase Inc. (EE.UU.)</strong><span style={{ color:"#6B7280" }}>Base de datos cifrada AES-256</span>
-          </div>
-          <div style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom:"1px solid #DCFCE7", fontSize:13 }}>
-            <strong>Vercel Inc. (EE.UU.)</strong><span style={{ color:"#6B7280" }}>Hospedaje web</span>
-          </div>
-          <div style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", fontSize:13 }}>
-            <strong>Cloudinary Inc. (EE.UU.)</strong><span style={{ color:"#6B7280" }}>Almacenamiento de imágenes</span>
-          </div>
-        </div>
-        <p style={sp}>No vendemos tus datos a terceros bajo ninguna circunstancia.</p>
-
+        <p style={sp}><strong>CleanForce Marketplace</strong> · Monterrey, NL, México · <a href="mailto:privacidad@cleanforce.com.mx" style={{color:"#16A34A"}}>privacidad@cleanforce.com.mx</a></p>
+        <h2 style={sh2}>II. Datos que recabamos</h2>
+        <ul><li style={sli}>Nombre, email, teléfono</li><li style={sli}>Municipio, zona, jornada y tarifa</li><li style={sli}>Fotografía de perfil</li><li style={sli}>Selfie con INE (dato sensible)</li><li style={sli}>Referencias laborales: nombre, teléfono y relación</li></ul>
+        <h2 style={sh2}>III. Finalidades</h2>
+        <p style={sp}><strong>Primarias:</strong> crear perfil público, verificar identidad, facilitar contrataciones.</p>
+        <p style={sp}><strong>Secundarias (puedes oponerte):</strong> notificaciones y mejoras de la plataforma. Escríbenos a privacidad@cleanforce.com.mx</p>
+        <h2 style={sh2}>IV. Transferencias</h2>
+        <p style={sp}>Supabase (base de datos), Vercel (hosting), Cloudinary (imágenes). No vendemos datos a terceros.</p>
         <h2 style={sh2}>V. Datos sensibles</h2>
-        <p style={sp}>La fotografía con INE es un dato sensible utilizado exclusivamente para verificar tu identidad. Se almacena en buckets privados cifrados con acceso restringido. Al proporcionarla otorgas consentimiento expreso.</p>
-
+        <p style={sp}>La selfie con INE se usa exclusivamente para verificación, almacenada en buckets privados cifrados con AES-256.</p>
         <h2 style={sh2}>VI. Derechos ARCO</h2>
-        <p style={sp}>Tienes derecho a <strong>Acceder, Rectificar, Cancelar u Oponerte</strong> al tratamiento de tus datos:</p>
-        <ul>
-          <li style={sli}>Envía un correo a privacidad@cleanforce.com.mx con asunto "Solicitud ARCO"</li>
-          <li style={sli}>Incluye tu nombre completo, correo registrado y descripción de tu solicitud</li>
-          <li style={sli}>Respondemos en máximo 20 días hábiles</li>
-        </ul>
-
-        <h2 style={sh2}>VII. Medidas de seguridad</h2>
-        <p style={sp}>Cifrado HTTPS/TLS 1.3 en todas las comunicaciones, cifrado AES-256 en reposo, Row Level Security en la base de datos y acceso restringido por roles al panel de administración.</p>
-
-        <h2 style={sh2}>VIII. Menores de edad</h2>
-        <p style={sp}>CleanForce no recopila datos de menores de 18 años. Al registrarte declaras ser mayor de edad.</p>
-
-        <h2 style={sh2}>IX. Cambios al aviso</h2>
-        <p style={sp}>Cualquier modificación será notificada en esta página con al menos 10 días de anticipación a su entrada en vigor.</p>
-
-        <h2 style={sh2}>X. Contacto y autoridad competente</h2>
-        <p style={sp}>Para dudas: <a href="mailto:privacidad@cleanforce.com.mx" style={{ color:"#16A34A", fontWeight:600 }}>privacidad@cleanforce.com.mx</a></p>
-        <p style={sp}>Si consideras que tus derechos han sido vulnerados puedes acudir al <strong>INAI</strong>: <a href="https://www.inai.org.mx" target="_blank" rel="noopener noreferrer" style={{ color:"#16A34A" }}>www.inai.org.mx</a></p>
-
-        <div style={{ marginTop:32, padding:"16px 20px", background:"#F9FAFB", borderRadius:10, textAlign:"center" }}>
-          <p style={{ fontSize:12, color:"#6B7280" }}>
-            CleanForce Marketplace · Monterrey, Nuevo León, México
-          </p>
+        <p style={sp}>Escribe a <a href="mailto:privacidad@cleanforce.com.mx" style={{color:"#16A34A"}}>privacidad@cleanforce.com.mx</a> con asunto "Solicitud ARCO". Respondemos en 20 días hábiles.</p>
+        <h2 style={sh2}>VII. Seguridad</h2>
+        <p style={sp}>HTTPS/TLS 1.3, cifrado AES-256 en reposo, Row Level Security y acceso restringido por roles.</p>
+        <h2 style={sh2}>VIII. Contacto y autoridad</h2>
+        <p style={sp}>INAI: <a href="https://www.inai.org.mx" target="_blank" rel="noopener noreferrer" style={{color:"#16A34A"}}>www.inai.org.mx</a></p>
+        <div style={{marginTop:24,padding:"12px",background:"#F9FAFB",borderRadius:8,textAlign:"center"}}>
+          <p style={{fontSize:11,color:"#6B7280"}}>CleanForce Marketplace · Monterrey, Nuevo León · {new Date().getFullYear()}</p>
         </div>
       </div>
     </div>
