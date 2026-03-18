@@ -2,14 +2,40 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CleanForce — Marketplace de Personal de Limpieza</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>CleanForce — Personal de Limpieza</title>
     <meta name="description" content="Encuentra personal de limpieza verificado para tu empresa o hogar." />
+    
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#1a7a5e" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="CleanForce" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="CleanForce — Personal de Limpieza" />
+    <meta property="og:description" content="Marketplace de personal de limpieza verificado en México." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/icon-512.png" />
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   </head>
   <body style="margin:0">
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module" src="/main.jsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(r => console.log('SW registrado:', r.scope))
+            .catch(e => console.log('SW error:', e));
+        });
+      }
+    </script>
   </body>
 </html>
