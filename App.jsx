@@ -103,6 +103,7 @@ export default function App() {
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
           <button onClick={()=>setVista("directorio")} style={{padding:"8px 14px",borderRadius:8,border:"none",background:vista==="directorio"?G.greenLight:"transparent",color:vista==="directorio"?G.green:G.muted,fontWeight:600,fontSize:13,cursor:"pointer"}}>Directorio</button>
           <button onClick={()=>setVista("planes")} style={{padding:"8px 14px",borderRadius:8,border:"none",background:vista==="planes"?G.greenLight:"transparent",color:vista==="planes"?G.green:G.muted,fontWeight:600,fontSize:13,cursor:"pointer"}}>Planes</button>
+          <button onClick={()=>setVista("terminos")} style={{padding:"8px 14px",borderRadius:8,border:"none",background:"transparent",color:G.muted,fontWeight:500,fontSize:13,cursor:"pointer"}}>Términos</button>
           <button onClick={()=>setVista("aviso")} style={{padding:"8px 14px",borderRadius:8,border:"none",background:"transparent",color:G.muted,fontWeight:500,fontSize:13,cursor:"pointer"}}>Privacidad</button>
           <button onClick={()=>setVista("registrar")} style={{padding:"9px 18px",borderRadius:10,border:"none",background:G.green,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Publicar perfil gratis</button>
         </div>
@@ -114,6 +115,7 @@ export default function App() {
       {vista==="registrar" && <Registrar onSuccess={n=>{setVista("directorio");showToast(`¡Bienvenida ${n}! 🎉`);cargar();}} setVista={setVista} />}
       {vista==="planes" && <Planes setVista={setVista} onPago={(tipo)=>setModalPago({tipo})} />}
       {vista==="aviso" && <AvisoPrivacidad onBack={()=>setVista("inicio")} />}
+      {vista==="terminos" && <TerminosCondiciones onBack={()=>setVista("inicio")} />}
       {modalSolicitud && seleccionado && <ModalSolicitud trabajador={seleccionado} onClose={()=>setModalSolicitud(false)} onSuccess={()=>{setModalSolicitud(false);showToast("Solicitud enviada ✓");}} />}
       {modalPago && <ModalPago config={modalPago} onClose={()=>setModalPago(null)} onSuccess={()=>showToast("Redirigiendo a pago seguro...")} />}
       {toast && <div style={{position:"fixed",bottom:28,left:"50%",transform:"translateX(-50%)",background:toast.tipo==="err"?G.red:"#111827",color:"#fff",padding:"14px 28px",borderRadius:40,fontSize:14,fontWeight:600,zIndex:999,whiteSpace:"nowrap",boxShadow:"0 8px 32px rgba(0,0,0,.2)"}}>{toast.msg}</div>}
@@ -294,6 +296,7 @@ function Planes({setVista, onPago}) {
 
 function ModalPago({config, onClose, onSuccess}) {
   const [email, setEmail] = useState("");
+  const [aceptaTyC, setAceptaTyC] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -309,6 +312,7 @@ function ModalPago({config, onClose, onSuccess}) {
 
   const pagar = async () => {
     if(!email) { setError("Ingresa tu email para continuar."); return; }
+    if(!aceptaTyC) { setError("Debes aceptar los Términos y Condiciones."); return; }
     setLoading(true); setError(null);
     try {
       await iniciarPago({ priceId: cfg.priceId, mode: cfg.mode, trabajadorId: config?.trabajador?.id || "", trabajadorNombre: config?.trabajador?.nombre || "", empleadorEmail: email });
@@ -331,8 +335,14 @@ function ModalPago({config, onClose, onSuccess}) {
           <label style={{display:"block",fontSize:11,fontWeight:700,color:G.muted,marginBottom:6,textTransform:"uppercase",letterSpacing:.5}}>Tu email</label>
           <input style={{width:"100%",padding:"10px 12px",border:`1.5px solid ${G.border}`,borderRadius:8,fontSize:13,outline:"none"}} type="email" placeholder="correo@ejemplo.com" value={email} onChange={e=>setEmail(e.target.value)} />
         </div>
+        <div style={{background:"#F9FAFB",border:`1.5px solid ${aceptaTyC?G.green:G.border}`,borderRadius:10,padding:12,marginBottom:14}}>
+          <label style={{display:"flex",alignItems:"flex-start",gap:8,cursor:"pointer"}}>
+            <input type="checkbox" checked={aceptaTyC} onChange={e=>setAceptaTyC(e.target.checked)} style={{width:16,height:16,marginTop:2,accentColor:G.green,flexShrink:0,cursor:"pointer"}}/>
+            <span style={{fontSize:11,color:G.text,lineHeight:1.6}}>He leído y acepto los <span style={{color:G.green,fontWeight:700,cursor:"pointer",textDecoration:"underline"}} onClick={e=>{e.stopPropagation();window.open("/terminos","_blank")}}>Términos y Condiciones</span> y el <span style={{color:G.green,fontWeight:700,cursor:"pointer",textDecoration:"underline"}} onClick={e=>{e.stopPropagation();window.open("/aviso","_blank")}}>Aviso de Privacidad</span>. Entiendo que CleanForce es un intermediario y no garantiza antecedentes penales.</span>
+          </label>
+        </div>
         {error && <div style={{color:G.red,fontSize:12,marginBottom:10}}>{error}</div>}
-        <button onClick={pagar} disabled={loading} style={{width:"100%",padding:13,background:G.green,color:"#fff",border:"none",borderRadius:10,fontWeight:700,fontSize:14,cursor:loading?"not-allowed":"pointer",opacity:loading?.7:1}}>
+        <button onClick={pagar} disabled={loading||!aceptaTyC} style={{width:"100%",padding:13,background:aceptaTyC?G.green:"#9CA3AF",color:"#fff",border:"none",borderRadius:10,fontWeight:700,fontSize:14,cursor:aceptaTyC&&!loading?"pointer":"not-allowed",opacity:loading?.7:1}}>
           {loading ? "Redirigiendo..." : `Pagar ${cfg.precio} →`}
         </button>
         <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginTop:12}}>
@@ -663,6 +673,118 @@ function Registrar({onSuccess,setVista}) {
         <div style={{fontWeight:700,fontSize:14,color:"#92400E",marginBottom:4}}>¿Ya tienes perfil? Hazte Premium</div>
         <div style={{fontSize:12,color:"#B45309",marginBottom:12}}>Aparece primero en búsquedas por solo $299/mes</div>
         <button onClick={()=>setVista("planes")} style={{padding:"8px 20px",background:G.gold,color:"#fff",border:"none",borderRadius:8,fontWeight:700,fontSize:12,cursor:"pointer"}}>Ver plan Premium →</button>
+      </div>
+    </div>
+  );
+}
+
+function TerminosCondiciones({onBack}) {
+  const sp = {fontSize:14,color:"#374151",lineHeight:1.8,marginBottom:10};
+  const sh1 = {fontSize:17,fontWeight:800,color:"#16A34A",margin:"28px 0 8px",paddingBottom:6,borderBottom:"2px solid #DCFCE7"};
+  const sh2 = {fontSize:15,fontWeight:700,color:"#111827",margin:"18px 0 6px"};
+  const sli = {fontSize:13,color:"#374151",lineHeight:2,marginLeft:18};
+  const aviso = {background:"#FEF2F2",border:"1px solid #FCA5A5",borderRadius:10,padding:"12px 16px",marginBottom:16,fontSize:13,color:"#991B1B",lineHeight:1.7};
+  const nota = {background:"#F0FDF4",border:"1px solid #DCFCE7",borderRadius:10,padding:"12px 16px",margin:"12px 0",fontSize:13,color:"#15803D",lineHeight:1.7};
+
+  return (
+    <div style={{maxWidth:780,margin:"0 auto",padding:"28px 24px 64px"}}>
+      <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",color:"#6B7280",cursor:"pointer",fontSize:13,fontWeight:600,marginBottom:20}}>← Volver al inicio</button>
+      <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:20,padding:"36px 44px"}}>
+        <div style={{display:"inline-block",background:"#DCFCE7",color:"#15803D",fontSize:11,fontWeight:700,padding:"3px 12px",borderRadius:20,marginBottom:18}}>Documento legal vigente</div>
+        <h1 style={{fontSize:26,fontWeight:800,color:"#16A34A",marginBottom:4}}>Términos y Condiciones de Uso</h1>
+        <p style={{...sp,color:"#6B7280",marginBottom:24}}>Última actualización: {new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"})}</p>
+
+        <div style={aviso}>
+          <strong>AVISO IMPORTANTE:</strong> Al registrarse o utilizar CleanForce, usted acepta de manera expresa estos Términos y Condiciones. Si no está de acuerdo, absténgase de usar la plataforma.
+        </div>
+
+        <h2 style={sh1}>I. Definiciones</h2>
+        <ul>
+          <li style={sli}><strong>"CleanForce":</strong> El sitio web cleanforce.com.mx y sus servicios digitales.</li>
+          <li style={sli}><strong>"Operador":</strong> CleanForce Marketplace, Monterrey, Nuevo León, México.</li>
+          <li style={sli}><strong>"Trabajadora":</strong> Persona que publica su perfil ofreciendo servicios de limpieza o cuidado.</li>
+          <li style={sli}><strong>"Empleador":</strong> Persona que busca contratar servicios a través de la Plataforma.</li>
+          <li style={sli}><strong>"Contratación":</strong> Acuerdo privado celebrado directamente entre Trabajadora y Empleador.</li>
+        </ul>
+
+        <h2 style={sh1}>II. Naturaleza del Servicio — CleanForce como Intermediario</h2>
+        <p style={{...sp,fontWeight:700}}>CleanForce es exclusivamente una plataforma de intermediación digital. No es agencia de empleo, empresa de servicios ni patrón de ninguna Trabajadora registrada.</p>
+        <ul>
+          <li style={sli}>No existe relación laboral entre el Operador y las Trabajadoras.</li>
+          <li style={sli}>El Operador no es responsable de acciones u omisiones de ningún Usuario.</li>
+          <li style={sli}>Los acuerdos económicos y condiciones laborales son pactados directamente entre las partes.</li>
+          <li style={sli}>El Operador no interviene ni garantiza el cumplimiento de acuerdos privados entre Usuarios.</li>
+        </ul>
+
+        <h2 style={sh1}>III. Verificación de Identidad y Limitaciones</h2>
+        <p style={sp}>CleanForce realiza verificación básica de identidad mediante foto de perfil y selfie con INE, con el único propósito de confirmar que la persona coincide con el documento presentado.</p>
+        <div style={aviso}>
+          <strong>CleanForce NO realiza:</strong> investigación de antecedentes penales, consulta de registros del RENAPO, verificación de referencias laborales, ni garantiza honestidad o conducta de ningún Usuario.
+        </div>
+        <div style={nota}>
+          <strong>Recomendación al Empleador:</strong> Antes de contratar, solicite carta de no antecedentes penales, verifique referencias de forma independiente y realice entrevista presencial previa.
+        </div>
+
+        <h2 style={sh1}>IV. Exención de Responsabilidad</h2>
+        <h3 style={sh2}>4.1 Eventos en el domicilio del Empleador</h3>
+        <p style={sp}>El Operador no asume responsabilidad por:</p>
+        <ul>
+          <li style={sli}>Robos, sustracciones o daños a bienes ocurridos en el domicilio del Empleador.</li>
+          <li style={sli}>Lesiones físicas, accidentes o daños a personas durante la prestación del servicio.</li>
+          <li style={sli}>Incumplimiento por parte de la Trabajadora de acuerdos pactados con el Empleador.</li>
+          <li style={sli}>Cualquier perjuicio económico, moral o de cualquier naturaleza entre Usuarios.</li>
+        </ul>
+        <h3 style={sh2}>4.2 Uso de datos personales</h3>
+        <ul>
+          <li style={sli}>El Operador no es responsable del uso indebido que un Empleador haga de datos de contacto adquiridos.</li>
+          <li style={sli}>Los datos de contacto son de uso exclusivo para contratación laboral. Cualquier otro uso viola estos Términos y la LFPDPPP.</li>
+        </ul>
+        <h3 style={sh2}>4.3 Límite máximo de responsabilidad</h3>
+        <p style={{...sp,fontWeight:700}}>En ningún caso la responsabilidad total del Operador excederá el monto pagado por el Usuario a CleanForce durante los 3 meses previos al evento que origina la reclamación.</p>
+
+        <h2 style={sh1}>V. Obligaciones de los Usuarios</h2>
+        <h3 style={sh2}>Trabajadoras</h3>
+        <ul>
+          <li style={sli}>Proporcionar información veraz y actualizada en su perfil.</li>
+          <li style={sli}>No publicar información falsa sobre experiencia, habilidades o referencias.</li>
+          <li style={sli}>Tratar con respeto y profesionalismo a los Empleadores.</li>
+        </ul>
+        <h3 style={sh2}>Empleadores</h3>
+        <ul>
+          <li style={sli}>Usar los datos de contacto únicamente para fines de contratación.</li>
+          <li style={sli}>No compartir, vender ni ceder datos de contacto adquiridos a terceros.</li>
+          <li style={sli}>Cumplir con las obligaciones patronales de la Ley Federal del Trabajo al contratar.</li>
+          <li style={sli}>Verificar de forma independiente antecedentes antes de otorgar acceso a su domicilio.</li>
+        </ul>
+
+        <h2 style={sh1}>VI. Conductas Prohibidas</h2>
+        <ul>
+          <li style={sli}>Publicar información falsa o fraudulenta.</li>
+          <li style={sli}>Usar la Plataforma para actividades ilícitas.</li>
+          <li style={sli}>Acosar, amenazar o intimidar a otros Usuarios.</li>
+          <li style={sli}>Evadir los mecanismos de pago para contactar Trabajadoras directamente.</li>
+          <li style={sli}>Crear múltiples cuentas para evadir sanciones.</li>
+        </ul>
+        <p style={sp}>El incumplimiento faculta al Operador a suspender la cuenta de forma inmediata y sin reembolso.</p>
+
+        <h2 style={sh1}>VII. Pagos y Reembolsos</h2>
+        <p style={sp}>Los pagos son procesados por Stripe, Inc. El Operador no almacena datos de tarjetas.</p>
+        <ul>
+          <li style={sli}><strong>Pagos únicos</strong> (Ver Contacto y Comisión): No reembolsables una vez entregado el acceso.</li>
+          <li style={sli}><strong>Suscripciones</strong>: Se renuevan automáticamente. Cancelar con 24h de anticipación al siguiente ciclo.</li>
+          <li style={sli}><strong>Reembolsos</strong>: Solo en casos de falla técnica comprobable del Operador, dentro de 5 días hábiles.</li>
+        </ul>
+
+        <h2 style={sh1}>VIII. Ley Aplicable y Jurisdicción</h2>
+        <p style={sp}>Estos Términos se rigen por las leyes de los Estados Unidos Mexicanos. Para cualquier controversia, las partes se someten a los Tribunales competentes de Monterrey, Nuevo León, México.</p>
+
+        <h2 style={sh1}>IX. Contacto</h2>
+        <p style={sp}><strong>CleanForce Marketplace</strong> · Monterrey, Nuevo León, México</p>
+        <p style={sp}>Email: <a href="mailto:privacidad@cleanforce.com.mx" style={{color:"#16A34A"}}>privacidad@cleanforce.com.mx</a></p>
+
+        <div style={{marginTop:24,padding:"12px",background:"#F9FAFB",borderRadius:8,textAlign:"center"}}>
+          <p style={{fontSize:11,color:"#6B7280"}}>CleanForce Marketplace · Monterrey, Nuevo León · {new Date().getFullYear()}</p>
+        </div>
       </div>
     </div>
   );
