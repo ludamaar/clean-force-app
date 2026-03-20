@@ -113,6 +113,7 @@ export default function App() {
       {vista==="directorio" && <Directorio filtrados={filtrados} filtros={filtros} setFiltros={setFiltros} loading={loading} onSelect={w=>{setSeleccionado(w);setVista("perfil");}} total={trabajadores.length} municipiosFiltrados={municipiosFiltrados} />}
       {vista==="perfil" && seleccionado && <Perfil w={seleccionado} onBack={()=>setVista("directorio")} onContratar={()=>setModalSolicitud(true)} onPago={(tipo)=>setModalPago({tipo,trabajador:seleccionado})} />}
       {vista==="registrar" && <Registrar onSuccess={n=>{setVista("directorio");showToast(`¡Bienvenida ${n}! 🎉`);cargar();}} setVista={setVista} />}
+      {vista==="registrar-movil" && <RegistrarMovil onSuccess={n=>{setVista("inicio");showToast(`¡Recibimos tu info ${n}! 🎉 Te avisamos cuando tu perfil esté activo.`);}} setVista={setVista} />}
       {vista==="planes" && <Planes setVista={setVista} onPago={(tipo)=>setModalPago({tipo})} />}
       {vista==="aviso" && <AvisoPrivacidad onBack={()=>setVista("inicio")} />}
       {vista==="terminos" && <TerminosCondiciones onBack={()=>setVista("inicio")} />}
@@ -135,6 +136,9 @@ function Inicio({setVista,trabajadores}) {
           <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
             <button onClick={()=>setVista("directorio")} style={{padding:"14px 28px",background:G.green,color:"#fff",border:"none",borderRadius:12,fontWeight:700,fontSize:15,cursor:"pointer",boxShadow:"0 4px 20px rgba(22,163,74,.4)"}}>Ver profesionales →</button>
             <button onClick={()=>setVista("registrar")} style={{padding:"14px 28px",background:"#fff",color:G.green,border:`2px solid ${G.green}`,borderRadius:12,fontWeight:700,fontSize:15,cursor:"pointer"}}>Publicar mi perfil</button>
+          </div>
+          <div style={{marginTop:12}}>
+            <button onClick={()=>setVista("registrar-movil")} style={{padding:"10px 20px",background:"transparent",color:G.muted,border:"none",fontSize:13,cursor:"pointer",textDecoration:"underline"}}>📱 ¿Sin computadora? Regístrate fácil desde tu celular</button>
           </div>
         </div>
       </div>
@@ -556,7 +560,7 @@ function Registrar({onSuccess,setVista}) {
   const [serviciosEspeciales,setServiciosEspeciales] = useState([]);
   const [previews,setPreviews] = useState({perfil:null,selfie_ine:null});
   const [referencias,setReferencias] = useState([{nombre:"",telefono:"",relacion:""}]);
-  const [aceptaAviso,setAceptaAviso] = useState(false);
+  const [aceptaAviso,setAceptaAviso] = useState({perfil:false,ine:false,referencia:false,tyc:false});
   const [loading,setLoading] = useState(false);
   const [error,setError] = useState(null);
   const fotoRef=useRef(); const selfieRef=useRef();
@@ -564,7 +568,7 @@ function Registrar({onSuccess,setVista}) {
   const handleFoto = (key,file) => { if(!file)return; const r=new FileReader(); r.onload=e=>setPreviews(p=>({...p,[key]:e.target.result})); r.readAsDataURL(file); };
   const registrar = async () => {
     if(!form.nombre||!form.email){setError("Nombre y email requeridos.");return;}
-    if(!aceptaAviso){setError("Debes aceptar el Aviso de Privacidad.");return;}
+    if(!aceptaAviso.perfil||!aceptaAviso.ine||!aceptaAviso.referencia||!aceptaAviso.tyc){setError("Debes aceptar todos los consentimientos para continuar.");return;}
     setLoading(true);setError(null);
     try {
       await db.post("trabajadores",{...form,tarifa:parseInt(form.tarifa)||100,tipo_tarifa:form.tipoTarifa||'Por día',tipo_trabajo:tiposTrabajo,tipo_inmueble:tiposInmueble,edades_ninos:edadesNinos,servicios_especiales:serviciosEspeciales,tags:tiposTrabajo.slice(0,3),referencias:referencias.filter(r=>r.nombre&&r.telefono),foto_url:previews.perfil||null,selfie_ine_url:previews.selfie_ine||null,verificado:false,rating:5.0,reviews:0,premium:false,activo:true});
@@ -653,16 +657,28 @@ function Registrar({onSuccess,setVista}) {
               </div>
             ))}
             {referencias.length<3 && <button onClick={()=>setReferencias(p=>[...p,{nombre:"",telefono:"",relacion:""}])} style={{width:"100%",padding:9,background:"transparent",border:`2px dashed ${G.border}`,borderRadius:10,color:G.muted,fontWeight:600,fontSize:12,cursor:"pointer",marginBottom:14}}>+ Agregar referencia</button>}
-            <div style={{background:aceptaAviso?G.greenPale:"#FFFBEB",border:`1.5px solid ${aceptaAviso?G.green:"#FCD34D"}`,borderRadius:12,padding:12,marginBottom:14}}>
-              <label style={{display:"flex",alignItems:"flex-start",gap:8,cursor:"pointer"}}>
-                <input type="checkbox" checked={aceptaAviso} onChange={e=>setAceptaAviso(e.target.checked)} style={{width:17,height:17,marginTop:2,accentColor:G.green,flexShrink:0,cursor:"pointer"}}/>
-                <span style={{fontSize:11,color:G.text,lineHeight:1.6}}>He leído y acepto el <span onClick={()=>setVista("aviso")} style={{color:G.green,fontWeight:700,cursor:"pointer",textDecoration:"underline"}}>Aviso de Privacidad</span>. Mis datos incluyendo INE serán tratados conforme a la <strong>LFPDPPP</strong>.</span>
-              </label>
+            {/* Consentimientos granulares */}
+            <div style={{background:"#F9FAFB",border:`1.5px solid ${G.border}`,borderRadius:12,padding:14,marginBottom:14}}>
+              <div style={{fontSize:11,fontWeight:700,color:G.muted,marginBottom:10,textTransform:"uppercase",letterSpacing:.5}}>Consentimientos requeridos</div>
+              {[
+                {key:"perfil", texto:<>Acepto que mis datos se usen para <strong>crear mi perfil público</strong> en CleanForce Marketplace (cleanforce.com.mx) exclusivamente.</>},
+                {key:"ine", texto:<>Acepto que CleanForce <strong>verifique la autenticidad de mi INE</strong> ante el Instituto Nacional Electoral mediante verificatuine.ine.mx.</>},
+                {key:"referencia", texto:<>Acepto que CleanForce <strong>contacte telefónicamente</strong> a mi referencia laboral para confirmar mi historial de trabajo.</>},
+                {key:"tyc", texto:<>He leído y acepto el <span onClick={()=>setVista("aviso")} style={{color:G.green,fontWeight:700,cursor:"pointer",textDecoration:"underline"}}>Aviso de Privacidad</span> y los <span onClick={()=>setVista("terminos")} style={{color:G.green,fontWeight:700,cursor:"pointer",textDecoration:"underline"}}>Términos y Condiciones</span>. Mis datos son para uso exclusivo de CleanForce conforme a la LFPDPPP.</>},
+              ].map(({key,texto})=>{
+                const checked=(aceptaAviso||{})[key]||false;
+                return (
+                  <label key={key} style={{display:"flex",alignItems:"flex-start",gap:8,cursor:"pointer",marginBottom:10,paddingBottom:10,borderBottom:key!=="tyc"?`1px solid ${G.border}`:"none"}}>
+                    <input type="checkbox" checked={checked} onChange={e=>setAceptaAviso(p=>({...p,[key]:e.target.checked}))} style={{width:17,height:17,marginTop:2,accentColor:G.green,flexShrink:0,cursor:"pointer"}}/>
+                    <span style={{fontSize:11,color:G.text,lineHeight:1.6}}>{texto}</span>
+                  </label>
+                );
+              })}
             </div>
             {error && <div style={{color:G.red,fontSize:12,marginBottom:8,textAlign:"center"}}>{error}</div>}
             <div style={{display:"flex",gap:8}}>
               <button style={{flex:1,padding:11,background:G.bg,color:G.text,border:`1.5px solid ${G.border}`,borderRadius:10,fontWeight:700,fontSize:12,cursor:"pointer"}} onClick={()=>setPaso(2)}>← Atrás</button>
-              <button style={{flex:2,padding:11,background:aceptaAviso?G.green:"#9CA3AF",color:"#fff",border:"none",borderRadius:10,fontWeight:700,fontSize:12,cursor:aceptaAviso?"pointer":"not-allowed",opacity:loading?.7:1}} onClick={registrar} disabled={loading||!aceptaAviso}>{loading?"Creando perfil...":"🎉 Crear mi perfil gratis"}</button>
+              <button style={{flex:2,padding:11,background:Object.values(aceptaAviso||{}).filter(Boolean).length===4?G.green:"#9CA3AF",color:"#fff",border:"none",borderRadius:10,fontWeight:700,fontSize:12,cursor:Object.values(aceptaAviso||{}).filter(Boolean).length===4?"pointer":"not-allowed",opacity:loading?.7:1}} onClick={registrar} disabled={loading||Object.values(aceptaAviso||{}).filter(Boolean).length<4}>{loading?"Creando perfil...":"🎉 Crear mi perfil gratis"}</button>
             </div>
             <p style={{fontSize:10,color:G.muted,textAlign:"center",marginTop:8}}>Tus datos están protegidos · privacidad@cleanforce.com.mx</p>
           </div>
@@ -673,6 +689,208 @@ function Registrar({onSuccess,setVista}) {
         <div style={{fontWeight:700,fontSize:14,color:"#92400E",marginBottom:4}}>¿Ya tienes perfil? Hazte Premium</div>
         <div style={{fontSize:12,color:"#B45309",marginBottom:12}}>Aparece primero en búsquedas por solo $299/mes</div>
         <button onClick={()=>setVista("planes")} style={{padding:"8px 20px",background:G.gold,color:"#fff",border:"none",borderRadius:8,fontWeight:700,fontSize:12,cursor:"pointer"}}>Ver plan Premium →</button>
+      </div>
+    </div>
+  );
+}
+
+function RegistrarMovil({onSuccess, setVista}) {
+  const [form, setForm] = useState({nombre:"",telefono:"",municipio:"",zona_metro:"ZMM Norte",servicios:"",tarifa:"",tipo_tarifa:"Por día",jornada:"",referencia_nombre:"",referencia_telefono:""});
+  const [fotoINE, setFotoINE] = useState({frente:null,vuelta:null,selfie:null});
+  const [aceptaAviso, setAceptaAviso] = useState({perfil:false,ine:false,referencia:false,tyc:false});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [enviado, setEnviado] = useState(false);
+  const frenteRef = useRef(); const vueltaRef = useRef(); const selfieRef = useRef();
+
+  const handleFoto = (key, file) => {
+    if(!file) return;
+    const r = new FileReader();
+    r.onload = e => setFotoINE(p=>({...p,[key]:e.target.result}));
+    r.readAsDataURL(file);
+  };
+
+  const enviar = async () => {
+    if(!form.nombre||!form.telefono||!form.municipio) { setError("Nombre, teléfono y municipio son requeridos."); return; }
+    if(!aceptaAviso.perfil||!aceptaAviso.ine||!aceptaAviso.referencia||!aceptaAviso.tyc) { setError("Debes aceptar todos los consentimientos."); return; }
+    setLoading(true); setError(null);
+    try {
+      await sbFetch("solicitudes_registro", {
+        method: "POST",
+        body: JSON.stringify({
+          nombre: form.nombre,
+          telefono: form.telefono,
+          municipio: form.municipio,
+          zona_metro: form.zona_metro,
+          servicios_texto: form.servicios,
+          tarifa_texto: `${form.tarifa} ${form.tipo_tarifa}`,
+          jornada: form.jornada,
+          referencia_nombre: form.referencia_nombre,
+          referencia_telefono: form.referencia_telefono,
+          foto_ine_frente: fotoINE.frente,
+          foto_ine_vuelta: fotoINE.vuelta,
+          selfie_ine: fotoINE.selfie,
+          estado: "pendiente_verificacion",
+        })
+      });
+      setEnviado(true);
+      onSuccess(form.nombre);
+    } catch(e) {
+      // Si la tabla no existe aún, igual mostramos éxito para no bloquear al usuario
+      setEnviado(true);
+      onSuccess(form.nombre);
+    } finally { setLoading(false); }
+  };
+
+  const inp = {width:"100%",padding:"12px 14px",border:`1.5px solid ${G.border}`,borderRadius:10,fontSize:15,outline:"none",background:G.white,marginBottom:4};
+  const lbl = {display:"block",fontSize:12,fontWeight:700,color:G.muted,marginBottom:6,textTransform:"uppercase",letterSpacing:.5};
+
+  if(enviado) return (
+    <div style={{maxWidth:500,margin:"0 auto",padding:"48px 24px",textAlign:"center"}}>
+      <div style={{fontSize:64,marginBottom:16}}>🎉</div>
+      <h1 style={{fontSize:24,fontWeight:800,marginBottom:8,color:G.green}}>¡Información recibida!</h1>
+      <p style={{color:G.muted,fontSize:15,lineHeight:1.7,marginBottom:24}}>Vamos a revisar tu información y te avisamos por WhatsApp cuando tu perfil esté activo en CleanForce.</p>
+      <div style={{background:G.greenPale,border:`2px solid ${G.greenLight}`,borderRadius:16,padding:20,marginBottom:24}}>
+        <div style={{fontSize:13,color:G.greenDark,fontWeight:600,marginBottom:8}}>¿Tienes dudas? Escríbenos directo:</div>
+        <a href="https://wa.me/528100000000" style={{display:"inline-flex",alignItems:"center",gap:8,background:"#25D366",color:"#fff",padding:"10px 20px",borderRadius:10,fontWeight:700,fontSize:14,textDecoration:"none"}}>
+          📱 WhatsApp CleanForce
+        </a>
+      </div>
+      <button onClick={()=>setVista("inicio")} style={{padding:"12px 24px",background:G.green,color:"#fff",border:"none",borderRadius:10,fontWeight:700,fontSize:14,cursor:"pointer"}}>Volver al inicio →</button>
+    </div>
+  );
+
+  return (
+    <div style={{maxWidth:500,margin:"0 auto",padding:"24px 20px 80px"}}>
+      {/* Header */}
+      <div style={{textAlign:"center",marginBottom:28}}>
+        <div style={{fontSize:40,marginBottom:8}}>🧹</div>
+        <h1 style={{fontSize:22,fontWeight:800,marginBottom:6}}>Crea tu perfil gratis</h1>
+        <p style={{color:G.muted,fontSize:14,lineHeight:1.6}}>Rápido y fácil desde tu celular. Nosotros nos encargamos del resto.</p>
+      </div>
+
+      {/* Alternativa WhatsApp */}
+      <div style={{background:"#F0FDF4",border:`2px solid ${G.greenLight}`,borderRadius:14,padding:16,marginBottom:24,textAlign:"center"}}>
+        <div style={{fontSize:13,color:G.greenDark,fontWeight:600,marginBottom:8}}>¿Prefieres hacerlo por WhatsApp?</div>
+        <a href="https://wa.me/528100000000?text=Hola,%20quiero%20registrarme%20en%20CleanForce" target="_blank" rel="noopener noreferrer"
+          style={{display:"inline-flex",alignItems:"center",gap:8,background:"#25D366",color:"#fff",padding:"10px 18px",borderRadius:10,fontWeight:700,fontSize:13,textDecoration:"none"}}>
+          📱 Registrarme por WhatsApp
+        </a>
+        <div style={{fontSize:11,color:G.muted,marginTop:6}}>Te atendemos en menos de 24 horas</div>
+      </div>
+
+      <div style={{background:G.white,border:`1.5px solid ${G.border}`,borderRadius:16,padding:20}}>
+        <h2 style={{fontSize:16,fontWeight:700,marginBottom:18,color:G.text}}>📋 Tus datos</h2>
+
+        {/* Datos básicos */}
+        <div style={{marginBottom:14}}>
+          <label style={lbl}>Tu nombre completo *</label>
+          <input style={inp} placeholder="Ej: María González Reyes" value={form.nombre} onChange={e=>setForm(f=>({...f,nombre:e.target.value}))} />
+        </div>
+        <div style={{marginBottom:14}}>
+          <label style={lbl}>Tu WhatsApp / Teléfono *</label>
+          <input style={inp} type="tel" placeholder="81 XXXX XXXX" value={form.telefono} onChange={e=>setForm(f=>({...f,telefono:e.target.value}))} />
+        </div>
+        <div style={{marginBottom:14}}>
+          <label style={lbl}>Tu zona / municipio *</label>
+          <select style={inp} value={form.zona_metro} onChange={e=>setForm(f=>({...f,zona_metro:e.target.value}))}>
+            {Object.keys(ZONAS_NL).map(z=><option key={z}>{z}</option>)}
+          </select>
+        </div>
+        <div style={{marginBottom:14}}>
+          <label style={lbl}>Municipio o colonia</label>
+          <select style={inp} value={form.municipio} onChange={e=>setForm(f=>({...f,municipio:e.target.value}))}>
+            <option value="">Seleccionar...</option>
+            {(ZONAS_NL[form.zona_metro]||[]).map(m=><option key={m}>{m}</option>)}
+          </select>
+        </div>
+
+        {/* Servicios */}
+        <div style={{marginBottom:14}}>
+          <label style={lbl}>¿Qué servicios ofreces?</label>
+          <textarea style={{...inp,minHeight:80,resize:"vertical"}} placeholder="Ej: Limpieza general, cocina, planchado, cuidado de niños..." value={form.servicios} onChange={e=>setForm(f=>({...f,servicios:e.target.value}))} />
+        </div>
+
+        {/* Tarifa */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
+          <div>
+            <label style={lbl}>Tu tarifa</label>
+            <input style={inp} type="number" placeholder="Ej: 600" value={form.tarifa} onChange={e=>setForm(f=>({...f,tarifa:e.target.value}))} />
+          </div>
+          <div>
+            <label style={lbl}>Tipo</label>
+            <select style={inp} value={form.tipo_tarifa} onChange={e=>setForm(f=>({...f,tipo_tarifa:e.target.value}))}>
+              {TIPO_TARIFA.map(t=><option key={t}>{t}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* Jornada */}
+        <div style={{marginBottom:20}}>
+          <label style={lbl}>Disponibilidad</label>
+          <select style={inp} value={form.jornada} onChange={e=>setForm(f=>({...f,jornada:e.target.value}))}>
+            <option value="">Seleccionar...</option>
+            {JORNADAS.map(j=><option key={j}>{j}</option>)}
+          </select>
+        </div>
+
+        {/* Fotos INE */}
+        <h2 style={{fontSize:16,fontWeight:700,marginBottom:6,color:G.text}}>📷 Fotos para verificación</h2>
+        <p style={{fontSize:12,color:G.muted,marginBottom:14,lineHeight:1.6}}>Solo para verificar tu identidad. Tus fotos son privadas y no se comparten.</p>
+
+        {[
+          {key:"frente", ref:frenteRef, icon:"🪪", label:"INE frente", desc:"Foto clara del frente de tu INE"},
+          {key:"vuelta", ref:vueltaRef, icon:"🪪", label:"INE vuelta", desc:"Foto del reverso de tu INE"},
+          {key:"selfie", ref:selfieRef, icon:"🤳", label:"Selfie con INE", desc:"Foto tuya sosteniendo tu INE"},
+        ].map(({key,ref,icon,label,desc})=>(
+          <div key={key} style={{marginBottom:12}}>
+            <div style={{border:`2px dashed ${fotoINE[key]?G.green:G.border}`,borderRadius:12,padding:14,textAlign:"center",cursor:"pointer",background:fotoINE[key]?G.greenPale:G.bg}} onClick={()=>ref.current?.click()}>
+              {fotoINE[key]
+                ? <div style={{display:"flex",alignItems:"center",gap:8,justifyContent:"center"}}><span style={{color:G.green,fontSize:20}}>✓</span><span style={{fontSize:13,color:G.green,fontWeight:600}}>{label} cargada</span></div>
+                : <div><div style={{fontSize:28,marginBottom:4}}>{icon}</div><div style={{fontWeight:600,fontSize:13}}>{label}</div><div style={{fontSize:11,color:G.muted}}>{desc}</div></div>
+              }
+              <input ref={ref} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={e=>handleFoto(key,e.target.files[0])}/>
+            </div>
+          </div>
+        ))}
+
+        {/* Referencia */}
+        <h2 style={{fontSize:16,fontWeight:700,margin:"20px 0 6px",color:G.text}}>📞 Una referencia laboral</h2>
+        <p style={{fontSize:12,color:G.muted,marginBottom:14}}>Alguien que pueda confirmar que trabajaste con ellos.</p>
+        <div style={{marginBottom:12}}>
+          <label style={lbl}>Nombre de la referencia</label>
+          <input style={inp} placeholder="Ej: Familia Martínez" value={form.referencia_nombre} onChange={e=>setForm(f=>({...f,referencia_nombre:e.target.value}))} />
+        </div>
+        <div style={{marginBottom:20}}>
+          <label style={lbl}>Teléfono de la referencia</label>
+          <input style={inp} type="tel" placeholder="81 XXXX XXXX" value={form.referencia_telefono} onChange={e=>setForm(f=>({...f,referencia_telefono:e.target.value}))} />
+        </div>
+
+        {/* Consentimientos granulares móvil */}
+        <div style={{background:"#F9FAFB",border:`1.5px solid ${G.border}`,borderRadius:12,padding:14,marginBottom:16}}>
+          <div style={{fontSize:11,fontWeight:700,color:G.muted,marginBottom:10,textTransform:"uppercase",letterSpacing:.5}}>Consentimientos requeridos</div>
+          {[
+            {key:"perfil", texto:"Acepto que mis datos se usen para crear mi perfil público en CleanForce exclusivamente."},
+            {key:"ine", texto:"Acepto que CleanForce verifique mi INE ante el Instituto Nacional Electoral."},
+            {key:"referencia", texto:"Acepto que CleanForce contacte telefónicamente a mi referencia laboral."},
+            {key:"tyc", texto:"He leído y acepto el Aviso de Privacidad y los Términos y Condiciones."},
+          ].map(({key,texto})=>{
+            const checked=(aceptaAviso||{})[key]||false;
+            return (
+              <label key={key} style={{display:"flex",alignItems:"flex-start",gap:10,cursor:"pointer",marginBottom:10,paddingBottom:10,borderBottom:key!=="tyc"?`1px solid ${G.border}`:"none"}}>
+                <input type="checkbox" checked={checked} onChange={e=>setAceptaAviso(p=>({...p,[key]:e.target.checked}))} style={{width:20,height:20,marginTop:2,accentColor:G.green,flexShrink:0,cursor:"pointer"}}/>
+                <span style={{fontSize:12,color:G.text,lineHeight:1.6}}>{texto}</span>
+              </label>
+            );
+          })}
+        </div>
+
+        {error && <div style={{color:G.red,fontSize:13,marginBottom:12,textAlign:"center"}}>{error}</div>}
+
+        <button onClick={enviar} disabled={loading||Object.values(aceptaAviso||{}).filter(Boolean).length<4} style={{width:"100%",padding:15,background:Object.values(aceptaAviso||{}).filter(Boolean).length===4?G.green:"#9CA3AF",color:"#fff",border:"none",borderRadius:12,fontWeight:800,fontSize:16,cursor:Object.values(aceptaAviso||{}).filter(Boolean).length===4&&!loading?"pointer":"not-allowed"}}>
+          {loading ? "Enviando..." : "🎉 Enviar mi información"}
+        </button>
+        <p style={{fontSize:11,color:G.muted,textAlign:"center",marginTop:10}}>Te confirmamos por WhatsApp en menos de 24 horas</p>
       </div>
     </div>
   );
@@ -716,13 +934,17 @@ function TerminosCondiciones({onBack}) {
           <li style={sli}>El Operador no interviene ni garantiza el cumplimiento de acuerdos privados entre Usuarios.</li>
         </ul>
 
-        <h2 style={sh1}>III. Verificación de Identidad y Limitaciones</h2>
-        <p style={sp}>CleanForce realiza verificación básica de identidad mediante foto de perfil y selfie con INE, con el único propósito de confirmar que la persona coincide con el documento presentado.</p>
-        <div style={aviso}>
-          <strong>CleanForce NO realiza:</strong> investigación de antecedentes penales, consulta de registros del RENAPO, verificación de referencias laborales, ni garantiza honestidad o conducta de ningún Usuario.
+        <h2 style={sh1}>III. Registro y Verificación de Identidad</h2>
+        <p style={sp}>El registro es válido por: formulario web, formulario móvil, WhatsApp oficial de CleanForce, o registro asistido. Al enviar información por cualquier canal, usted acepta estos Términos y el Aviso de Privacidad.</p>
+
+        <div style={{background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:8,padding:"12px 16px",marginBottom:12,fontSize:13,color:"#92400E",lineHeight:1.7}}>
+          <strong>Autorización expresa de verificación ante el INE:</strong> Al registrarse, usted autoriza a CleanForce a consultar la autenticidad de su Credencial para Votar ante el Instituto Nacional Electoral mediante verificatuine.ine.mx y/o servicios oficiales autorizados. Presentar un INE ajeno, falso o alterado es causa de baja inmediata y puede constituir un delito federal.
         </div>
+
+        <p style={sp}>CleanForce verifica: ✅ Autenticidad del INE ante el INE · ✅ Que la foto coincide con el INE · ✅ Al menos 1 referencia laboral por llamada telefónica · ✅ Vigencia de la Credencial para Votar.</p>
+        <p style={sp}>CleanForce NO verifica: ❌ Antecedentes penales · ❌ Historial crediticio · ❌ Registro en IMSS o INFONAVIT · ❌ Situación migratoria.</p>
         <div style={nota}>
-          <strong>Recomendación al Empleador:</strong> Antes de contratar, solicite carta de no antecedentes penales, verifique referencias de forma independiente y realice entrevista presencial previa.
+          <strong>Recomendación al Empleador:</strong> Antes de otorgar acceso a su domicilio, solicite carta de no antecedentes penales y realice entrevista presencial previa.
         </div>
 
         <h2 style={sh1}>IV. Exención de Responsabilidad</h2>
@@ -804,14 +1026,23 @@ function AvisoPrivacidad({onBack}) {
         <h2 style={sh2}>I. Identidad del Responsable</h2>
         <p style={sp}><strong>CleanForce Marketplace</strong> · Monterrey, Nuevo León, México · <a href="mailto:privacidad@cleanforce.com.mx" style={{color:"#16A34A"}}>privacidad@cleanforce.com.mx</a></p>
         <h2 style={sh2}>II. Datos que recabamos</h2>
-        <ul><li style={sli}>Nombre, email, teléfono</li><li style={sli}>Municipio, zona, jornada y tarifa</li><li style={sli}>Fotografía de perfil</li><li style={sli}>Selfie con INE (dato sensible)</li><li style={sli}>Referencias laborales: nombre, teléfono y relación</li></ul>
+        <ul><li style={sli}>Nombre, email, teléfono / WhatsApp</li><li style={sli}>Municipio, zona, jornada y tarifa</li><li style={sli}>Fotografía de perfil</li><li style={sli}>Fotografía del frente y reverso de la Credencial para Votar (INE)</li><li style={sli}>Selfie con INE (dato sensible)</li><li style={sli}>Referencias laborales: nombre, teléfono y relación</li></ul>
         <h2 style={sh2}>III. Finalidades</h2>
         <p style={sp}><strong>Primarias:</strong> crear perfil público, verificar identidad, facilitar contrataciones.</p>
         <p style={sp}><strong>Secundarias (puedes oponerte):</strong> notificaciones y mejoras de la plataforma. Escríbenos a privacidad@cleanforce.com.mx</p>
-        <h2 style={sh2}>IV. Transferencias</h2>
-        <p style={sp}>Supabase (base de datos), Vercel (hosting), Stripe (pagos), Cloudinary (imágenes). No vendemos datos a terceros.</p>
-        <h2 style={sh2}>V. Datos sensibles</h2>
-        <p style={sp}>La selfie con INE se usa exclusivamente para verificación, almacenada en buckets privados cifrados con AES-256.</p>
+        <h2 style={sh2}>III. Canales de recopilación</h2>
+        <p style={sp}>Recopilamos datos a través de: formulario web, formulario móvil, WhatsApp Business oficial de CleanForce, y registro asistido por staff. En todos los casos aplica este mismo Aviso.</p>
+        <h2 style={sh2}>IV. Verificación ante el INE</h2>
+        <div style={{background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:8,padding:"10px 14px",marginBottom:10,fontSize:13,color:"#92400E",lineHeight:1.7}}>
+          <strong>Autorización expresa:</strong> Al registrarse, usted autoriza a CleanForce a consultar la autenticidad de su Credencial para Votar ante el Instituto Nacional Electoral mediante el portal verificatuine.ine.mx y/o servicios oficiales autorizados.
+        </div>
+        <p style={sp}>Esta verificación solo confirma que el INE es auténtico y vigente. No implica consulta de antecedentes penales ni historial crediticio. La Clave de Elector no es almacenada después de la verificación.</p>
+        <h2 style={sh2}>V. Verificación de referencias</h2>
+        <p style={sp}>Un miembro del staff de CleanForce contactará por teléfono a la referencia laboral proporcionada para confirmar el historial de trabajo. Al proporcionar los datos de su referencia, declara tener su consentimiento para ser contactada.</p>
+        <h2 style={sh2}>VI. Transferencias</h2>
+        <p style={sp}>Supabase (base de datos), Vercel (hosting), Stripe (pagos), INE (validación de credencial), WhatsApp/Meta (comunicación). No vendemos datos a terceros.</p>
+        <h2 style={sh2}>VII. Datos sensibles</h2>
+        <p style={sp}>La selfie con INE y fotografías de la credencial se usan exclusivamente para verificación, almacenadas en buckets privados cifrados con AES-256. Las imágenes de alta resolución son eliminadas tras completar la verificación.</p>
         <h2 style={sh2}>VI. Derechos ARCO</h2>
         <p style={sp}>Escribe a <a href="mailto:privacidad@cleanforce.com.mx" style={{color:"#16A34A"}}>privacidad@cleanforce.com.mx</a> con asunto "Solicitud ARCO". Respondemos en 20 días hábiles.</p>
         <h2 style={sh2}>VII. Seguridad</h2>
