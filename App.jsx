@@ -752,7 +752,7 @@ function RegistrarMovil({onSuccess, setVista}) {
       <p style={{color:G.muted,fontSize:15,lineHeight:1.7,marginBottom:24}}>Vamos a revisar tu información y te avisamos por WhatsApp cuando tu perfil esté activo en CleanForce.</p>
       <div style={{background:G.greenPale,border:`2px solid ${G.greenLight}`,borderRadius:16,padding:20,marginBottom:24}}>
         <div style={{fontSize:13,color:G.greenDark,fontWeight:600,marginBottom:8}}>¿Tienes dudas? Escríbenos directo:</div>
-        <a href="https://wa.me/528100000000" style={{display:"inline-flex",alignItems:"center",gap:8,background:"#25D366",color:"#fff",padding:"10px 20px",borderRadius:10,fontWeight:700,fontSize:14,textDecoration:"none"}}>
+        <a href="https://wa.me/525659146340" style={{display:"inline-flex",alignItems:"center",gap:8,background:"#25D366",color:"#fff",padding:"10px 20px",borderRadius:10,fontWeight:700,fontSize:14,textDecoration:"none"}}>
           📱 WhatsApp CleanForce
         </a>
       </div>
@@ -772,7 +772,7 @@ function RegistrarMovil({onSuccess, setVista}) {
       {/* Alternativa WhatsApp */}
       <div style={{background:"#F0FDF4",border:`2px solid ${G.greenLight}`,borderRadius:14,padding:16,marginBottom:24,textAlign:"center"}}>
         <div style={{fontSize:13,color:G.greenDark,fontWeight:600,marginBottom:8}}>¿Prefieres hacerlo por WhatsApp?</div>
-        <a href="https://wa.me/528100000000?text=Hola,%20quiero%20registrarme%20en%20CleanForce" target="_blank" rel="noopener noreferrer"
+        <a href="https://wa.me/525659146340?text=Hola,%20quiero%20registrarme%20en%20CleanForce" target="_blank" rel="noopener noreferrer"
           style={{display:"inline-flex",alignItems:"center",gap:8,background:"#25D366",color:"#fff",padding:"10px 18px",borderRadius:10,fontWeight:700,fontSize:13,textDecoration:"none"}}>
           📱 Registrarme por WhatsApp
         </a>
