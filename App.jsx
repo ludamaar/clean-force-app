@@ -61,7 +61,7 @@ export default function App() {
   const [seleccionado, setSeleccionado] = useState(null);
   const [loading, setLoading] = useState(false);
   const [filtros, setFiltros] = useState({q:"",zona:"",municipio:"",tiposTrabajo:[],jornada:"",tipoInmueble:"",tarifa:500});
-  const [modalSolicitud, setModalSolicitud] = useState(false);
+
   const [modalPago, setModalPago] = useState(null);
   const [toast, setToast] = useState(null);
 
@@ -111,13 +111,13 @@ export default function App() {
 
       {vista==="inicio" && <Inicio setVista={setVista} trabajadores={trabajadores} />}
       {vista==="directorio" && <Directorio filtrados={filtrados} filtros={filtros} setFiltros={setFiltros} loading={loading} onSelect={w=>{setSeleccionado(w);setVista("perfil");}} total={trabajadores.length} municipiosFiltrados={municipiosFiltrados} />}
-      {vista==="perfil" && seleccionado && <Perfil w={seleccionado} onBack={()=>setVista("directorio")} onContratar={()=>setModalSolicitud(true)} onPago={(tipo)=>setModalPago({tipo,trabajador:seleccionado})} />}
+      {vista==="perfil" && seleccionado && <Perfil w={seleccionado} onBack={()=>setVista("directorio")} onPago={(tipo)=>setModalPago({tipo,trabajador:seleccionado})} />}
       {vista==="registrar" && <Registrar onSuccess={n=>{setVista("directorio");showToast(`¡Bienvenida ${n}! 🎉`);cargar();}} setVista={setVista} />}
       {vista==="registrar-movil" && <RegistrarMovil onSuccess={n=>{setVista("inicio");showToast(`¡Recibimos tu info ${n}! 🎉 Te avisamos cuando tu perfil esté activo.`);}} setVista={setVista} />}
       {vista==="planes" && <Planes setVista={setVista} onPago={(tipo)=>setModalPago({tipo})} />}
       {vista==="aviso" && <AvisoPrivacidad onBack={()=>setVista("inicio")} />}
       {vista==="terminos" && <TerminosCondiciones onBack={()=>setVista("inicio")} />}
-      {modalSolicitud && seleccionado && <ModalSolicitud trabajador={seleccionado} onClose={()=>setModalSolicitud(false)} onSuccess={()=>{setModalSolicitud(false);showToast("Solicitud enviada ✓");}} />}
+
       {modalPago && <ModalPago config={modalPago} onClose={()=>setModalPago(null)} onSuccess={()=>showToast("Redirigiendo a pago seguro...")} />}
       {toast && <div style={{position:"fixed",bottom:28,left:"50%",transform:"translateX(-50%)",background:toast.tipo==="err"?G.red:"#111827",color:"#fff",padding:"14px 28px",borderRadius:40,fontSize:14,fontWeight:600,zIndex:999,whiteSpace:"nowrap",boxShadow:"0 8px 32px rgba(0,0,0,.2)"}}>{toast.msg}</div>}
     </div>
@@ -463,7 +463,7 @@ function TarjetaTrabajador({w,onSelect}) {
   );
 }
 
-function Perfil({w,onBack,onContratar,onPago}) {
+function Perfil({w,onBack,onPago}) {
   const col = colorPara(w.nombre);
   return (
     <div style={{maxWidth:760,margin:"0 auto",padding:"28px 24px 64px"}}>
@@ -522,42 +522,8 @@ function Perfil({w,onBack,onContratar,onPago}) {
               🤝 Confirmar contratación<br/><span style={{fontSize:11,fontWeight:500}}>$900 — revela contactos</span>
             </button>
           </div>
-          <button onClick={onContratar} style={{width:"100%",padding:11,background:G.bg,color:G.muted,border:`1.5px solid ${G.border}`,borderRadius:12,fontWeight:600,fontSize:13,cursor:"pointer"}}>Enviar solicitud gratuita →</button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
-function ModalSolicitud({trabajador,onClose,onSuccess}) {
-  const [form,setForm] = useState({nombre:"",email:"",telefono:"",mensaje:"",zona_trabajo:"",tipo_inmueble:"",jornada_requerida:""});
-  const [loading,setLoading] = useState(false);
-  const [error,setError] = useState(null);
-  const inp = {width:"100%",padding:"10px 12px",border:`1.5px solid ${G.border}`,borderRadius:8,fontSize:13,outline:"none"};
-  const lbl = {display:"block",fontSize:10,fontWeight:700,color:G.muted,marginBottom:5,textTransform:"uppercase",letterSpacing:.5};
-  const enviar = async () => {
-    if(!form.nombre||!form.email){setError("Nombre y email requeridos.");return;}
-    setLoading(true);setError(null);
-    try {
-      await db.post("solicitudes",{trabajador_id:trabajador.id,empleador_nombre:form.nombre,empleador_email:form.email,mensaje:`${form.mensaje}\nZona: ${form.zona_trabajo}\nInmueble: ${form.tipo_inmueble}\nJornada: ${form.jornada_requerida}`,estado:"pendiente"});
-      onSuccess();
-    } catch { setError("Error al enviar."); } finally { setLoading(false); }
-  };
-  return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={onClose}>
-      <div style={{background:G.white,borderRadius:20,maxWidth:500,width:"100%",padding:26,maxHeight:"90vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
-        <div style={{display:"flex",justifyContent:"space-between",marginBottom:18}}><h2 style={{fontSize:16,fontWeight:800}}>Contactar a {trabajador.nombre?.split(" ")[0]}</h2><button onClick={onClose} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:G.muted}}>✕</button></div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-          {[["Tu nombre o empresa *","nombre","text"],["Tu email *","email","email"],["Teléfono","telefono","tel"]].map(([l,k,t])=>(
-            <div key={k} style={{gridColumn:k==="nombre"?"1/-1":"auto"}}><label style={lbl}>{l}</label><input style={inp} type={t} value={form[k]} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))} /></div>
-          ))}
-          <div><label style={lbl}>Municipio / Zona</label><select style={inp} value={form.zona_trabajo} onChange={e=>setForm(f=>({...f,zona_trabajo:e.target.value}))}><option value="">Seleccionar...</option>{TODOS_MUNICIPIOS.map(m=><option key={m}>{m}</option>)}</select></div>
-          <div><label style={lbl}>Tipo de inmueble</label><select style={inp} value={form.tipo_inmueble} onChange={e=>setForm(f=>({...f,tipo_inmueble:e.target.value}))}><option value="">Seleccionar...</option>{TIPOS_INMUEBLE.map(t=><option key={t}>{t}</option>)}</select></div>
-          <div style={{gridColumn:"1/-1"}}><label style={lbl}>Jornada requerida</label><select style={inp} value={form.jornada_requerida} onChange={e=>setForm(f=>({...f,jornada_requerida:e.target.value}))}><option value="">Seleccionar...</option>{JORNADAS.map(j=><option key={j}>{j}</option>)}</select></div>
-          <div style={{gridColumn:"1/-1"}}><label style={lbl}>Descripción del trabajo</label><textarea style={{...inp,minHeight:75,resize:"vertical"}} value={form.mensaje} onChange={e=>setForm(f=>({...f,mensaje:e.target.value}))} placeholder="Actividades, horarios, sueldo ofrecido, zona exacta..." /></div>
         </div>
-        {error && <div style={{color:G.red,fontSize:12,margin:"8px 0"}}>{error}</div>}
-        <button style={{width:"100%",padding:12,background:G.green,color:"#fff",border:"none",borderRadius:10,fontWeight:700,fontSize:13,cursor:"pointer",marginTop:10}} onClick={enviar} disabled={loading}>{loading?"Enviando...":"Enviar solicitud →"}</button>
       </div>
     </div>
   );
