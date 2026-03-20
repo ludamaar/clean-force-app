@@ -257,37 +257,41 @@ function Planes({setVista, onPago}) {
           <button onClick={()=>onPago("premium_trabajadora")} style={{width:"100%",padding:11,background:G.gold,color:"#fff",border:"none",borderRadius:10,fontWeight:700,fontSize:13,cursor:"pointer"}}>Obtener Premium — $299/mes →</button>
         </div>
       </div>
-      <h2 style={{fontSize:18,fontWeight:700,marginBottom:16}}>🏢 Para empleadores</h2>
+      <h2 style={{fontSize:18,fontWeight:700,marginBottom:8}}>🏢 Para empleadores</h2>
+      <div style={{background:"#F0FDF4",border:`1.5px solid #DCFCE7`,borderRadius:12,padding:14,marginBottom:20,fontSize:13,color:G.greenDark,lineHeight:1.7}}>
+        <strong>¿Cómo funciona el contacto en CleanForce?</strong><br/>
+        Los datos de contacto de las trabajadoras <strong>nunca se revelan directamente</strong>. CleanForce actúa como intermediario para proteger a ambas partes. Pagas la presentación ($149), negocian condiciones a través de CleanForce por WhatsApp, y al confirmar la contratación ($900) CleanForce revela los contactos de ambos.
+      </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:16}}>
         <div style={{background:G.white,border:`2px solid ${G.border}`,borderRadius:20,padding:28}}>
-          <div style={{fontSize:13,fontWeight:700,color:G.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:1}}>Ver Contacto</div>
+          <div style={{fontSize:13,fontWeight:700,color:G.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:1}}>Solicitar presentación</div>
           <div style={{fontSize:36,fontWeight:800,marginBottom:4}}>$149</div>
           <div style={{fontSize:13,color:G.muted,marginBottom:20}}>pago único por trabajadora</div>
           <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:24}}>
-            {["Teléfono directo","Email de contacto","Acceso inmediato","Sin compromisos"].map(f=>(
+            {["CleanForce te presenta por WhatsApp","Negociación de condiciones asistida","Sin revelar datos hasta confirmar","Sin compromisos de contratación"].map(f=>(
               <div key={f} style={{display:"flex",alignItems:"center",gap:8,fontSize:13}}><span style={{color:G.green}}>✓</span>{f}</div>
             ))}
           </div>
-          <button onClick={()=>onPago("ver_contacto")} style={{width:"100%",padding:11,background:G.greenPale,color:G.green,border:`2px solid ${G.green}`,borderRadius:10,fontWeight:700,fontSize:13,cursor:"pointer"}}>Ver contacto — $149 →</button>
+          <button onClick={()=>onPago("ver_contacto")} style={{width:"100%",padding:11,background:G.greenPale,color:G.green,border:`2px solid ${G.green}`,borderRadius:10,fontWeight:700,fontSize:13,cursor:"pointer"}}>📱 Solicitar presentación — $149 →</button>
         </div>
         <div style={{background:G.white,border:`2px solid ${G.border}`,borderRadius:20,padding:28}}>
-          <div style={{fontSize:13,fontWeight:700,color:G.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:1}}>Comisión Contratación</div>
+          <div style={{fontSize:13,fontWeight:700,color:G.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:1}}>Confirmar Contratación</div>
           <div style={{fontSize:36,fontWeight:800,marginBottom:4}}>$900</div>
           <div style={{fontSize:13,color:G.muted,marginBottom:20}}>pago único al contratar</div>
           <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:24}}>
-            {["Confirmación formal","Datos completos","Soporte post-contratación","Garantía de verificación"].map(f=>(
+            {["CleanForce revela contactos de ambos","Registro formal de contratación","Garantía de perfil verificado con INE","Soporte post-contratación 30 días"].map(f=>(
               <div key={f} style={{display:"flex",alignItems:"center",gap:8,fontSize:13}}><span style={{color:G.green}}>✓</span>{f}</div>
             ))}
           </div>
-          <button onClick={()=>onPago("comision_contratacion")} style={{width:"100%",padding:11,background:G.greenPale,color:G.green,border:`2px solid ${G.green}`,borderRadius:10,fontWeight:700,fontSize:13,cursor:"pointer"}}>Contratar — $900 →</button>
+          <button onClick={()=>onPago("comision_contratacion")} style={{width:"100%",padding:11,background:G.greenPale,color:G.green,border:`2px solid ${G.green}`,borderRadius:10,fontWeight:700,fontSize:13,cursor:"pointer"}}>🤝 Confirmar contratación — $900 →</button>
         </div>
         <div style={{background:"linear-gradient(135deg,#F0FDF4,#DCFCE7)",border:`2px solid ${G.green}`,borderRadius:20,padding:28,position:"relative"}}>
           <div style={{position:"absolute",top:-12,left:"50%",transform:"translateX(-50%)",background:G.green,color:"#fff",fontSize:11,fontWeight:700,padding:"3px 14px",borderRadius:20,whiteSpace:"nowrap"}}>💎 MEJOR VALOR</div>
           <div style={{fontSize:13,fontWeight:700,color:G.greenDark,marginBottom:8,textTransform:"uppercase",letterSpacing:1}}>Suscripción Empleador</div>
           <div style={{fontSize:36,fontWeight:800,marginBottom:4}}>$699</div>
-          <div style={{fontSize:13,color:G.muted,marginBottom:20}}>por mes · contactos ilimitados</div>
+          <div style={{fontSize:13,color:G.muted,marginBottom:20}}>por mes · presentaciones ilimitadas</div>
           <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:24}}>
-            {["Contactos ilimitados todo el mes","Acceso prioritario a perfiles nuevos","Filtros avanzados","Soporte dedicado","Sin costo adicional por contratación"].map(f=>(
+            {["Presentaciones ilimitadas todo el mes","Sin comisión de contratación ($900)","Acceso prioritario a perfiles nuevos","Filtros avanzados","Soporte dedicado vía WhatsApp"].map(f=>(
               <div key={f} style={{display:"flex",alignItems:"center",gap:8,fontSize:13}}><span style={{color:G.green}}>✓</span>{f}</div>
             ))}
           </div>
@@ -307,8 +311,8 @@ function ModalPago({config, onClose, onSuccess}) {
   const CONFIGS = {
     premium_trabajadora: { titulo:"⭐ Perfil Premium", precio:"$299/mes", desc:"Aparece primero en búsquedas y destaca ante empleadores.", priceId: PRICES.premium_trabajadora, mode:"subscription" },
     suscripcion_empleador: { titulo:"🏢 Suscripción Empleador", precio:"$699/mes", desc:"Contactos ilimitados con trabajadoras verificadas.", priceId: PRICES.suscripcion_empleador, mode:"subscription" },
-    ver_contacto: { titulo:"👁️ Ver Contacto", precio:"$149", desc:`Ver datos de contacto de ${config?.trabajador?.nombre?.split(" ")[0] || "esta trabajadora"}.`, priceId: PRICES.ver_contacto, mode:"payment" },
-    comision_contratacion: { titulo:"🤝 Confirmar Contratación", precio:"$900", desc:`Contratar formalmente a ${config?.trabajador?.nombre?.split(" ")[0] || "esta trabajadora"}.`, priceId: PRICES.comision_contratacion, mode:"payment" },
+    ver_contacto: { titulo:"📱 Solicitar presentación", precio:"$149", desc:`CleanForce te presenta con ${config?.trabajador?.nombre?.split(" ")[0] || "la trabajadora"} por WhatsApp. Los datos de contacto se revelan solo al confirmar la contratación.`, priceId: PRICES.ver_contacto, mode:"payment" },
+    comision_contratacion: { titulo:"🤝 Confirmar Contratación", precio:"$900", desc:`Confirma la contratación de ${config?.trabajador?.nombre?.split(" ")[0] || "la trabajadora"}. Al pagar, CleanForce revela los datos de contacto de ambos por WhatsApp.`, priceId: PRICES.comision_contratacion, mode:"payment" },
   };
 
   const cfg = CONFIGS[config?.tipo];
@@ -502,12 +506,20 @@ function Perfil({w,onBack,onContratar,onPago}) {
             </div>
           </div>
           {w.referencias?.length>0 && <div style={{marginBottom:18}}><h3 style={{fontWeight:700,fontSize:13,marginBottom:8}}>Referencias laborales</h3>{w.referencias.map((r,i)=><div key={i} style={{background:G.bg,border:`1px solid ${G.border}`,borderRadius:10,padding:11,marginBottom:7,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontWeight:600,fontSize:13}}>{r.nombre}</div><div style={{fontSize:11,color:G.muted}}>{r.relacion}</div></div><div style={{fontSize:12,color:G.green,fontWeight:600}}>📞 {r.telefono}</div></div>)}</div>}
+          {/* Caja explicativa del flujo */}
+          <div style={{background:"#F0FDF4",border:`1.5px solid #DCFCE7`,borderRadius:12,padding:12,marginBottom:12,fontSize:12,color:G.greenDark,lineHeight:1.6}}>
+            <div style={{fontWeight:700,marginBottom:4}}>¿Cómo funciona el contacto?</div>
+            <div>1. Pagas $149 → CleanForce te presenta con la trabajadora por WhatsApp</div>
+            <div>2. Negocian condiciones a través de CleanForce</div>
+            <div>3. Si contratan → pagas $900 → CleanForce revela los datos de ambos</div>
+            <div style={{marginTop:6,color:G.muted,fontSize:11}}>Los datos de contacto nunca se revelan antes de confirmar la contratación.</div>
+          </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
             <button onClick={()=>onPago("ver_contacto")} style={{padding:12,background:G.greenPale,color:G.greenDark,border:`2px solid ${G.green}`,borderRadius:12,fontWeight:700,fontSize:13,cursor:"pointer"}}>
-              👁️ Ver Contacto<br/><span style={{fontSize:11,fontWeight:500}}>$149 pago único</span>
+              📱 Solicitar presentación<br/><span style={{fontSize:11,fontWeight:500}}>$149 pago único</span>
             </button>
             <button onClick={()=>onPago("comision_contratacion")} style={{padding:12,background:G.green,color:"#fff",border:"none",borderRadius:12,fontWeight:700,fontSize:13,cursor:"pointer"}}>
-              🤝 Contratar<br/><span style={{fontSize:11,fontWeight:500}}>$900 pago único</span>
+              🤝 Confirmar contratación<br/><span style={{fontSize:11,fontWeight:500}}>$900 — revela contactos</span>
             </button>
           </div>
           <button onClick={onContratar} style={{width:"100%",padding:11,background:G.bg,color:G.muted,border:`1.5px solid ${G.border}`,borderRadius:12,fontWeight:600,fontSize:13,cursor:"pointer"}}>Enviar solicitud gratuita →</button>
@@ -956,10 +968,11 @@ function TerminosCondiciones({onBack}) {
           <li style={sli}>Incumplimiento por parte de la Trabajadora de acuerdos pactados con el Empleador.</li>
           <li style={sli}>Cualquier perjuicio económico, moral o de cualquier naturaleza entre Usuarios.</li>
         </ul>
-        <h3 style={sh2}>4.2 Uso de datos personales</h3>
+        <h3 style={sh2}>4.2 Protección de datos de contacto</h3>
         <ul>
-          <li style={sli}>El Operador no es responsable del uso indebido que un Empleador haga de datos de contacto adquiridos.</li>
-          <li style={sli}>Los datos de contacto son de uso exclusivo para contratación laboral. Cualquier otro uso viola estos Términos y la LFPDPPP.</li>
+          <li style={sli}>CleanForce actúa como intermediario en todo momento. Los datos de contacto de las Trabajadoras <strong>nunca se revelan directamente</strong> al Empleador antes de que se confirme y pague la contratación ($900).</li>
+          <li style={sli}>El Operador no es responsable del uso indebido que un Empleador haga de datos de contacto revelados tras la confirmación de contratación.</li>
+          <li style={sli}>Los datos de contacto son de uso exclusivo para la contratación laboral declarada. Cualquier otro uso viola estos Términos y la LFPDPPP.</li>
         </ul>
         <h3 style={sh2}>4.3 Límite máximo de responsabilidad</h3>
         <p style={{...sp,fontWeight:700}}>En ningún caso la responsabilidad total del Operador excederá el monto pagado por el Usuario a CleanForce durante los 3 meses previos al evento que origina la reclamación.</p>
@@ -970,31 +983,35 @@ function TerminosCondiciones({onBack}) {
           <li style={sli}>Proporcionar información veraz y actualizada en su perfil.</li>
           <li style={sli}>No publicar información falsa sobre experiencia, habilidades o referencias.</li>
           <li style={sli}>Tratar con respeto y profesionalismo a los Empleadores.</li>
+          <li style={sli}>No concretar contrataciones con Empleadores conocidos a través de CleanForce sin que se haya pagado la comisión de contratación correspondiente.</li>
         </ul>
         <h3 style={sh2}>Empleadores</h3>
         <ul>
-          <li style={sli}>Usar los datos de contacto únicamente para fines de contratación.</li>
-          <li style={sli}>No compartir, vender ni ceder datos de contacto adquiridos a terceros.</li>
+          <li style={sli}>Pagar la comisión de contratación ($900) antes de que CleanForce revele los datos de contacto de la Trabajadora.</li>
+          <li style={sli}>No intentar contactar directamente a una Trabajadora antes de que CleanForce haya revelado su contacto tras el pago de la comisión.</li>
+          <li style={sli}>No compartir, vender ni ceder datos de contacto de Trabajadoras a terceros bajo ninguna circunstancia.</li>
           <li style={sli}>Cumplir con las obligaciones patronales de la Ley Federal del Trabajo al contratar.</li>
           <li style={sli}>Verificar de forma independiente antecedentes antes de otorgar acceso a su domicilio.</li>
         </ul>
 
-        <h2 style={sh1}>VI. Conductas Prohibidas</h2>
+        <h2 style={sh1}>VI. Conductas Prohibidas y Evasión de Comisión</h2>
         <ul>
           <li style={sli}>Publicar información falsa o fraudulenta.</li>
           <li style={sli}>Usar la Plataforma para actividades ilícitas.</li>
           <li style={sli}>Acosar, amenazar o intimidar a otros Usuarios.</li>
-          <li style={sli}>Evadir los mecanismos de pago para contactar Trabajadoras directamente.</li>
-          <li style={sli}>Crear múltiples cuentas para evadir sanciones.</li>
+          <li style={sli}><strong>Evadir la comisión de contratación:</strong> queda expresamente prohibido que Empleadores y Trabajadoras que se conocieron a través de CleanForce concreten una contratación sin pagar la comisión correspondiente ($900). Esta prohibición aplica tanto para el primer empleo como para contrataciones posteriores dentro de los 12 meses siguientes al primer contacto.</li>
+          <li style={sli}>Crear múltiples cuentas para evadir sanciones o pagos.</li>
+          <li style={sli}>Compartir datos de contacto de Trabajadoras obtenidos a través de CleanForce con terceros.</li>
         </ul>
-        <p style={sp}>El incumplimiento faculta al Operador a suspender la cuenta de forma inmediata y sin reembolso.</p>
+        <p style={{...sp,fontWeight:700,color:"#991B1B"}}>El incumplimiento de cualquiera de las prohibiciones anteriores, especialmente la evasión de comisión, faculta al Operador a: (1) suspender la cuenta de forma inmediata y permanente sin reembolso, (2) reclamar el monto evadido más daños y perjuicios por la vía civil, y (3) reportar la conducta ante las autoridades competentes.</p>
 
         <h2 style={sh1}>VII. Pagos y Reembolsos</h2>
         <p style={sp}>Los pagos son procesados por Stripe, Inc. El Operador no almacena datos de tarjetas.</p>
         <ul>
-          <li style={sli}><strong>Pagos únicos</strong> (Ver Contacto y Comisión): No reembolsables una vez entregado el acceso.</li>
-          <li style={sli}><strong>Suscripciones</strong>: Se renuevan automáticamente. Cancelar con 24h de anticipación al siguiente ciclo.</li>
-          <li style={sli}><strong>Reembolsos</strong>: Solo en casos de falla técnica comprobable del Operador, dentro de 5 días hábiles.</li>
+          <li style={sli}><strong>Presentación ($149):</strong> No reembolsable una vez que CleanForce ha iniciado el proceso de presentación por WhatsApp.</li>
+          <li style={sli}><strong>Comisión de contratación ($900):</strong> No reembolsable una vez revelados los datos de contacto de ambas partes.</li>
+          <li style={sli}><strong>Suscripciones:</strong> Se renuevan automáticamente. Cancelar con 24h de anticipación al siguiente ciclo.</li>
+          <li style={sli}><strong>Reembolsos:</strong> Solo en casos de falla técnica comprobable del Operador, dentro de 5 días hábiles.</li>
         </ul>
 
         <h2 style={sh1}>VIII. Ley Aplicable y Jurisdicción</h2>
