@@ -202,7 +202,8 @@ function Inicio({setVista,trabajadores}) {
           <div style={{background:"linear-gradient(135deg,#F0FDF4,#DCFCE7)",borderRadius:14,padding:"20px 24px",display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
             <div style={{fontSize:28}}>🛡️</div>
             <div style={{flex:1}}>
-              <div style={{fontWeight:700,fontSize:14,color:G.greenDark,marginBottom:4}}>CleanForce vs grupos de Facebook</div>
+              <div style={{fontWeight:700,fontSize:14,color:G.greenDark,marginBottom:2}}>¿Por qué CleanForce y no buscar por tu cuenta?</div>
+              <div style={{fontSize:13,color:G.greenDark,marginBottom:8,fontStyle:"italic"}}>Porque verificamos a cada persona antes de que la contrates.</div>
               <div style={{display:"flex",gap:20,flexWrap:"wrap"}}>
                 {["✅ Perfiles verificados con INE","✅ Referencias laborales comprobables","✅ Foto e identificación oficial","✅ Calificaciones reales de empleadores"].map(d=>(
                   <span key={d} style={{fontSize:12,color:G.greenDark,fontWeight:500}}>{d}</span>
