@@ -97,7 +97,7 @@ export default function App() {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');*{box-sizing:border-box;margin:0;padding:0}input,select,textarea,button{font-family:inherit}.ch:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(0,0,0,.1)!important;border-color:#16A34A!important}.ch{transition:all .2s}@keyframes fu{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}.fu{animation:fu .4s ease forwards}@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}`}</style>
       <nav style={{background:G.white,borderBottom:`1px solid ${G.border}`,padding:"0 24px",display:"flex",alignItems:"center",justifyContent:"space-between",height:64,position:"sticky",top:0,zIndex:100,boxShadow:"0 1px 8px rgba(0,0,0,.06)"}}>
         <div onClick={()=>setVista("inicio")} style={{cursor:"pointer",display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:38,height:38,background:G.green,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>🧹</div>
+          <img src="/logo_favicon_256.png" alt="CleanForce" style={{width:38,height:38,borderRadius:10,objectFit:"cover"}}/>
           <div><div style={{fontWeight:800,fontSize:17,color:G.text,lineHeight:1}}>CleanForce</div><div style={{fontSize:9,color:G.muted,letterSpacing:1.5}}>NUEVO LEÓN</div></div>
         </div>
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
@@ -742,7 +742,7 @@ function RegistrarMovil({onSuccess, setVista}) {
     <div style={{maxWidth:500,margin:"0 auto",padding:"24px 20px 80px"}}>
       {/* Header */}
       <div style={{textAlign:"center",marginBottom:28}}>
-        <div style={{fontSize:40,marginBottom:8}}>🧹</div>
+        <img src="/logo_favicon_256.png" alt="CleanForce" style={{width:56,height:56,borderRadius:14,objectFit:"cover",marginBottom:8}}/>
         <h1 style={{fontSize:22,fontWeight:800,marginBottom:6}}>Crea tu perfil gratis</h1>
         <p style={{color:G.muted,fontSize:14,lineHeight:1.6}}>Rápido y fácil desde tu celular. Nosotros nos encargamos del resto.</p>
       </div>
