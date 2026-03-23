@@ -316,16 +316,43 @@ function ModalPago({config, onClose, onSuccess}) {
     comision_contratacion: { titulo:"🤝 Confirmar Contratación", precio:"$900", desc:`Confirma la contratación de ${config?.trabajador?.nombre?.split(" ")[0] || "la trabajadora"}. Al pagar, CleanForce revela los datos de contacto de ambos por WhatsApp.`, priceId: PRICES.comision_contratacion, mode:"payment" },
   };
 
+  const [codigoDesc, setCodigoDesc] = useState("");
+  const [codigoAplicado, setCodigoAplicado] = useState(false);
+  const CODIGO_VALIDO = "LANZAMIENTO";
+
+  const aplicarCodigo = () => {
+    if(codigoDesc.trim().toUpperCase() === CODIGO_VALIDO) {
+      setCodigoAplicado(true);
+      setError(null);
+    } else {
+      setError("Código inválido. Verifica e intenta de nuevo.");
+    }
+  };
+
   const cfg = CONFIGS[config?.tipo];
   if(!cfg) return null;
+
+  const esContacto = config?.tipo === "ver_contacto";
+  const precioFinal = (esContacto && codigoAplicado) ? "$0 — GRATIS" : cfg.precio;
 
   const pagar = async () => {
     if(!email) { setError("Ingresa tu email para continuar."); return; }
     if(!aceptaTyC) { setError("Debes aceptar los Términos y Condiciones."); return; }
     setLoading(true); setError(null);
     try {
-      await iniciarPago({ priceId: cfg.priceId, mode: cfg.mode, trabajadorId: config?.trabajador?.id || "", trabajadorNombre: config?.trabajador?.nombre || "", empleadorEmail: email });
-      onSuccess();
+      if(esContacto && codigoAplicado) {
+        // Código aplicado — registrar en Supabase sin cobrar
+        await db.post("contactos_desbloqueados", {
+          trabajador_id: config?.trabajador?.id || "",
+          empleador_email: email,
+          codigo_usado: CODIGO_VALIDO,
+          monto_pagado: 0,
+        });
+        onSuccess();
+      } else {
+        await iniciarPago({ priceId: cfg.priceId, mode: cfg.mode, trabajadorId: config?.trabajador?.id || "", trabajadorNombre: config?.trabajador?.nombre || "", empleadorEmail: email });
+        onSuccess();
+      }
     } catch(e) { setError(e.message); } finally { setLoading(false); }
   };
 
@@ -337,9 +364,27 @@ function ModalPago({config, onClose, onSuccess}) {
           <button onClick={onClose} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:G.muted}}>✕</button>
         </div>
         <div style={{background:G.greenPale,borderRadius:12,padding:16,marginBottom:20}}>
-          <div style={{fontSize:28,fontWeight:800,color:G.green,marginBottom:4}}>{cfg.precio}</div>
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
+            <div style={{fontSize:28,fontWeight:800,color:codigoAplicado&&esContacto?"#6B7280":G.green,textDecoration:codigoAplicado&&esContacto?"line-through":"none"}}>{cfg.precio}</div>
+            {codigoAplicado && esContacto && <div style={{fontSize:24,fontWeight:800,color:G.green}}>$0 — GRATIS 🎉</div>}
+          </div>
           <div style={{fontSize:13,color:G.muted}}>{cfg.desc}</div>
         </div>
+        {/* Campo código de descuento — solo para presentación */}
+        {esContacto && !codigoAplicado && (
+          <div style={{marginBottom:16}}>
+            <label style={{display:"block",fontSize:11,fontWeight:700,color:G.muted,marginBottom:6,textTransform:"uppercase",letterSpacing:.5}}>¿Tienes código de promoción?</label>
+            <div style={{display:"flex",gap:8}}>
+              <input style={{flex:1,padding:"10px 12px",border:`1.5px solid ${G.border}`,borderRadius:8,fontSize:13,outline:"none",textTransform:"uppercase"}} placeholder="Ej: LANZAMIENTO" value={codigoDesc} onChange={e=>setCodigoDesc(e.target.value.toUpperCase())} />
+              <button onClick={aplicarCodigo} style={{padding:"10px 16px",background:G.green,color:"#fff",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer",whiteSpace:"nowrap"}}>Aplicar</button>
+            </div>
+          </div>
+        )}
+        {codigoAplicado && esContacto && (
+          <div style={{background:"#F0FDF4",border:`1.5px solid ${G.greenLight}`,borderRadius:10,padding:10,marginBottom:16,fontSize:12,color:G.greenDark,fontWeight:600,textAlign:"center"}}>
+            ✅ Código LANZAMIENTO aplicado — Primera presentación gratis
+          </div>
+        )}
         <div style={{marginBottom:16}}>
           <label style={{display:"block",fontSize:11,fontWeight:700,color:G.muted,marginBottom:6,textTransform:"uppercase",letterSpacing:.5}}>Tu email</label>
           <input style={{width:"100%",padding:"10px 12px",border:`1.5px solid ${G.border}`,borderRadius:8,fontSize:13,outline:"none"}} type="email" placeholder="correo@ejemplo.com" value={email} onChange={e=>setEmail(e.target.value)} />
@@ -352,7 +397,7 @@ function ModalPago({config, onClose, onSuccess}) {
         </div>
         {error && <div style={{color:G.red,fontSize:12,marginBottom:10}}>{error}</div>}
         <button onClick={pagar} disabled={loading||!aceptaTyC} style={{width:"100%",padding:13,background:aceptaTyC?G.green:"#9CA3AF",color:"#fff",border:"none",borderRadius:10,fontWeight:700,fontSize:14,cursor:aceptaTyC&&!loading?"pointer":"not-allowed",opacity:loading?.7:1}}>
-          {loading ? "Redirigiendo..." : `Pagar ${cfg.precio} →`}
+          {loading ? "Procesando..." : codigoAplicado && esContacto ? "Solicitar presentación gratis →" : `Pagar ${cfg.precio} →`}
         </button>
         <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginTop:12}}>
           <span style={{fontSize:11,color:G.muted}}>🔒 Pago seguro con</span>
@@ -370,6 +415,15 @@ function Directorio({filtrados,filtros,setFiltros,loading,onSelect,total,municip
   const hayFiltros = filtros.zona||filtros.municipio||(filtros.tiposTrabajo||[]).length>0||filtros.jornada||filtros.tipoInmueble;
   return (
     <div style={{maxWidth:1200,margin:"0 auto",padding:"28px 24px"}}>
+      {/* Banner promoción de lanzamiento */}
+      <div style={{background:"linear-gradient(135deg,#FFFBEB,#FEF3C7)",border:"2px solid #F59E0B",borderRadius:14,padding:"14px 20px",marginBottom:20,display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
+        <div style={{fontSize:28}}>🎉</div>
+        <div style={{flex:1}}>
+          <div style={{fontWeight:800,fontSize:14,color:"#92400E",marginBottom:2}}>Promoción de lanzamiento — primeros 20 empleadores</div>
+          <div style={{fontSize:13,color:"#78350F"}}>Primera presentación <strong>GRATIS</strong> (normalmente $149) · Garantía total: si no encontramos a tu persona ideal, te devolvemos tu dinero</div>
+        </div>
+        <div style={{background:"#F59E0B",color:"#fff",fontWeight:800,fontSize:12,padding:"6px 14px",borderRadius:20,whiteSpace:"nowrap"}}>Usa código: LANZAMIENTO</div>
+      </div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:18,flexWrap:"wrap",gap:10}}>
         <div><h1 style={{fontSize:22,fontWeight:800,marginBottom:2}}>Directorio Nuevo León</h1><p style={{color:G.muted,fontSize:12}}>{filtrados.length} de {total} profesionales · Nuevo León</p></div>
         <button onClick={()=>setMostrarFiltros(!mostrarFiltros)} style={{padding:"8px 16px",background:G.white,border:`1.5px solid ${G.border}`,borderRadius:8,fontSize:12,cursor:"pointer",fontWeight:600}}>{mostrarFiltros?"Ocultar filtros ▲":"Filtros ▼"}</button>
